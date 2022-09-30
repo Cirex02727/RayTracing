@@ -4,8 +4,8 @@
 
 #include <GLFW/glfw3.h>
 
-namespace Walnut {
-
+namespace Walnut
+{
 	bool Input::IsKeyDown(KeyCode keycode)
 	{
 		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
@@ -34,5 +34,4 @@ namespace Walnut {
 		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
 		glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL + (int)mode);
 	}
-
 }

@@ -5,8 +5,8 @@
 extern Walnut::Application* Walnut::CreateApplication(int argc, char** argv);
 bool g_ApplicationRunning = true;
 
-namespace Walnut {
-
+namespace Walnut
+{
 	int Main(int argc, char** argv)
 	{
 		while (g_ApplicationRunning)
@@ -18,7 +18,6 @@ namespace Walnut {
 
 		return 0;
 	}
-
 }
 
 #ifdef WL_DIST

@@ -14,8 +14,8 @@ void check_vk_result(VkResult err);
 
 struct GLFWwindow;
 
-namespace Walnut {
-
+namespace Walnut
+{
 	struct ApplicationSpecification
 	{
 		std::string Name = "Walnut App";

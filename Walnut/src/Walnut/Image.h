@@ -4,8 +4,8 @@
 
 #include "vulkan/vulkan.h"
 
-namespace Walnut {
-
+namespace Walnut
+{
 	enum class ImageFormat
 	{
 		None = 0,

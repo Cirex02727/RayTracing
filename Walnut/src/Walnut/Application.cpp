@@ -382,8 +382,8 @@ static void glfw_error_callback(int error, const char* description)
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-namespace Walnut {
-
+namespace Walnut
+{
 	Application::Application(const ApplicationSpecification& specification)
 		: m_Specification(specification)
 	{
@@ -680,7 +680,6 @@ namespace Walnut {
 			m_TimeStep = glm::min<float>(m_FrameTime, 0.0333f);
 			m_LastFrameTime = time;
 		}
-
 	}
 
 	void Application::Close()
@@ -766,5 +765,4 @@ namespace Walnut {
 	{
 		s_ResourceFreeQueue[s_CurrentFrameIndex].emplace_back(func);
 	}
-
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-namespace Walnut {
-
+namespace Walnut
+{
 	class Layer
 	{
 	public:
@@ -13,5 +13,4 @@ namespace Walnut {
 		virtual void OnUpdate(float ts) {}
 		virtual void OnUIRender() {}
 	};
-
 }

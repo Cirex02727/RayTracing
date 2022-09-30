@@ -8,10 +8,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-namespace Walnut {
-
-	namespace Utils {
-
+namespace Walnut
+{
+	namespace Utils
+	{
 		static uint32_t GetVulkanMemoryType(VkMemoryPropertyFlags properties, uint32_t type_bits)
 		{
 			VkPhysicalDeviceMemoryProperties prop;
@@ -44,7 +44,6 @@ namespace Walnut {
 			}
 			return (VkFormat)0;
 		}
-
 	}
 
 	Image::Image(std::string_view path)
@@ -286,5 +285,4 @@ namespace Walnut {
 		Release();
 		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 	}
-
 }

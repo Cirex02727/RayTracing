@@ -4,8 +4,8 @@
 #include <string>
 #include <chrono>
 
-namespace Walnut {
-
+namespace Walnut
+{
 	class Timer
 	{
 	public:
@@ -47,7 +47,4 @@ namespace Walnut {
 		std::string m_Name;
 		Timer m_Timer;
 	};
-
-
-
 }
