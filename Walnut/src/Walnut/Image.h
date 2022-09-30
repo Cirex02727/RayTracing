@@ -50,8 +50,4 @@ namespace Walnut {
 
 		std::string m_Filepath;
 	};
-
 }
-
-
-
