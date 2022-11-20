@@ -1,7 +1,10 @@
 #include "Renderer.h"
 
 #include "Walnut/Random.h"
-#include <Walnut/Timer.h>
+#include "Walnut/Timer.h"
+
+#include "utils/Loader.h"
+
 #include <thread>
 
 namespace Utils
@@ -41,13 +44,17 @@ namespace Utils
 }
 
 Renderer::Renderer()
-	: m_Octree(256)
 {
+	Walnut::Random::Init();
+
+	Loader::load_vox("./models/model.vox", m_Octree);
+
 	// Generate Octree
 	{
 		Walnut::Timer t;
 		
 		// Insert Data
+		/*
 		uint16_t octree_size = 256;
 		for (uint16_t z = 0; z < octree_size; z++)
 			for (uint16_t y = 0; y < octree_size; y++)
@@ -57,6 +64,7 @@ Renderer::Renderer()
 					if (n >= 0.9f)
 						m_Octree.insert_node(x, y, z, ((x * 255 / octree_size) << 16) | ((y * 255 / octree_size) << 8) | (z * 255 / octree_size));
 				}
+		*/
 
 		/*
 		for (uint16_t z = 0; z < 16; z++)
@@ -121,6 +129,7 @@ Renderer::Renderer()
 			ray.Origin = { -1, 12, -1 };
 			ray.Direction = { 0, -0.589469, 0.8077909 };
 			ray.InvDirection = glm::vec3(1) / ray.Direction;
+			ray.MaxDistance = 100;
 
 			for (uint32_t i = 0; i < count; i++)
 				auto [node, pos, norm] = m_Octree.ray_travel(ray);
@@ -178,7 +187,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	m_ActiveCamera = &camera;
 
 	std::vector<std::thread> threads;
-	unsigned char num_threads = 6;
+	unsigned char num_threads = 6; // Default 6
 
 	uint32_t stepX = m_FinalImage->GetWidth() / num_threads;
 	uint32_t stepY = m_FinalImage->GetHeight() / num_threads;
@@ -238,6 +247,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FinalImage->GetWidth()];
 	ray.InvDirection = m_ActiveCamera->GetInvDirections()[x + y * m_FinalImage->GetWidth()];
+	ray.MaxDistance = 500;
 
 	glm::vec3 color(0.0f);
 
@@ -255,8 +265,8 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 			break;
 		}
 
-		// glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
-		// float lightIntensity = glm::max(glm::dot(paylod.WorldNormal, -lightDir), 0.0f); // == cos(angle)
+		glm::vec3 lightDir = glm::normalize(ray.Direction);
+		float lightIntensity = glm::max(glm::dot(paylod.WorldNormal, -lightDir), 0.0f); // == cos(angle)
 		
 		// const Sphere& sphere = m_ActiveScene->Spheres[paylod.ObjectIndex];
 		// glm::vec3 sphereColor = sphere.Albedo;
@@ -264,9 +274,9 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		// color += sphereColor * multiplier;
 
 		if (paylod.OctreeNode)
-			color = paylod.OctreeNode->get_color();
+			color = paylod.OctreeNode->get_color() * lightIntensity;
 		else
-			color = glm::vec3(1, 0, 1);
+			color = glm::vec3(1, 0, 1) * lightIntensity;
 
 		if (i == 1)
 			break;

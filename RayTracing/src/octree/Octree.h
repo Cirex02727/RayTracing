@@ -164,7 +164,9 @@ struct OctreeNode
 class Octree
 {
 public:
-	Octree(uint16_t max_size);
+	Octree();
+
+	void init(uint16_t max_size);
 
 	void insert_node(uint16_t x, uint16_t y, uint16_t z, uint32_t data);
 	void insert_range_node(u_shortV3& min_bound, u_shortV3& max_bound, uint32_t data);

@@ -3,7 +3,9 @@
 #include <queue>
 #include <Walnut/Timer.h>
 
-Octree::Octree(uint16_t max_size)
+Octree::Octree() {}
+
+void Octree::init(uint16_t max_size)
 {
 	nodes.emplace_back(1, u_shortV3{ 0 }, u_shortV3{ (uint16_t)(max_size - 1) });
 
@@ -14,11 +16,6 @@ Octree::Octree(uint16_t max_size)
 
 void Octree::insert_node(uint16_t x, uint16_t y, uint16_t z, uint32_t data)
 {
-	if (x == 73 && y == 128 && z == 0)
-	{
-		int a = 0;
-	}
-
 	OctreeNode* node = &nodes[0];
 	uint32_t curr_index = 0, prev_index = -1;
 
@@ -342,7 +339,7 @@ std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(const Ray&
 		return { nullptr, glm::vec3(), glm::vec3() };
 
 	glm::vec3 ray_pos = d < 0 ? ray.Origin : ray.Origin + ray.Direction * glm::vec3(d);
-	glm::vec3 pos = glm::floor(ray_pos);
+	glm::vec3 pos = glm::round(ray_pos);
 
 	glm::vec3 step = glm::sign(ray.Direction);
 	glm::vec3 tDelta = glm::vec3{
@@ -360,7 +357,7 @@ std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(const Ray&
 	tMaxZ = tDelta.z * ((ray.Direction.z > 0.0) ? (1.0f - fr.z) : fr.z);
 
 	glm::vec3 norm{};
-	const int maxTrace = 200 - d;
+	const int maxTrace = ray.MaxDistance - d;
 
 	bool isInBox = false;
 
@@ -371,7 +368,19 @@ std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(const Ray&
 			isInBox = true;
 			OctreeNode* subNode = find_node((uint16_t) pos.x, (uint16_t)pos.y, (uint16_t)pos.z);
 			if (subNode != nullptr && subNode->is_full())
+			{
+				if (norm.x == 0 && norm.y == 0 && norm.z == 0)
+				{
+					glm::vec3 localPoint = glm::abs(ray_pos - (pos + 0.5f));
+					if (std::abs(0.5f - localPoint.x) < std::abs(0.5f - localPoint.y))
+						if (std::abs(0.5f - localPoint.x) < std::abs(0.5f - localPoint.z))  norm = glm::vec3(pos.x == 16 ? 1 : -1, 0, 0);
+						else                             norm = glm::vec3(0, 0, pos.z == 16 ? 1 : -1);
+					else
+						if (std::abs(0.5f - localPoint.y) < std::abs(0.5f - localPoint.z)) norm = glm::vec3(0, pos.y == 16 ? 1 : -1, 0);
+						else                             norm = glm::vec3(0, 0, pos.z == 16 ? 1 : -1);
+				}
 				return { subNode, pos, norm };
+			}
 		}
 		else if (isInBox)
 			break;
