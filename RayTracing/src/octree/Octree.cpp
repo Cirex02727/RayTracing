@@ -14,6 +14,11 @@ void Octree::init(uint16_t max_size)
 	subdivide_node(node, firstChild);
 }
 
+void Octree::add_node(uint32_t first_child, u_shortV3 bottom_corner, u_shortV3 top_corner, uint32_t flags)
+{
+	nodes.emplace_back(first_child, bottom_corner, top_corner, flags);
+}
+
 void Octree::insert_node(uint16_t x, uint16_t y, uint16_t z, uint32_t data)
 {
 	OctreeNode* node = &nodes[0];

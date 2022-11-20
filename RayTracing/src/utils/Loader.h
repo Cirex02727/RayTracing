@@ -8,6 +8,10 @@ class Loader
 public:
 	static void load_vox(const char* file_name, Octree& octree);
 
+	static void load_oct(const char* file_name, Octree& octree);
+
+	static void dump_oct(const char* file_name, Octree& octree);
+
 private:
-	static void load_chunk(std::ifstream& file, Octree& octree);
+	static void load_chunk(std::fstream& file, Octree& octree);
 };

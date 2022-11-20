@@ -47,7 +47,13 @@ Renderer::Renderer()
 {
 	Walnut::Random::Init();
 
-	Loader::load_vox("./models/model.vox", m_Octree);
+	Loader::load_vox("./models/model_128.vox", m_Octree);
+
+	Loader::dump_oct("./models/model_128.oct", m_Octree);
+
+	m_Octree.nodes.clear();
+
+	Loader::load_oct("./models/model_128.oct", m_Octree);
 
 	// Generate Octree
 	{

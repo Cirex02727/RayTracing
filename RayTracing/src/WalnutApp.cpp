@@ -88,8 +88,8 @@ public:
 		ImGui::End();
 
 		ImGui::Begin("Render Settings");
-		ImGui::Checkbox("Render Light:", &m_RenderLight);
-		ImGui::Checkbox("Render Normal:", &m_RenderNormal);
+		ImGui::Checkbox("Render Light", &m_RenderLight);
+		ImGui::Checkbox("Render Normal", &m_RenderNormal);
 		ImGui::End();
 
 		ImGui::Begin("Scene");
@@ -467,7 +467,7 @@ private:
 
 	float m_LastRenderTime = 0;
 
-	bool m_RenderLight = true, m_RenderNormal;
+	bool m_RenderLight = true, m_RenderNormal = false;
 };
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)

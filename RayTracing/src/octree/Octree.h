@@ -73,6 +73,9 @@ struct OctreeNode
 	OctreeNode(uint32_t f_child, u_shortV3& bottom_corn, u_shortV3& top_corn)
 		: first_child(f_child), bottom_corner(bottom_corn), top_corner(top_corn), flags(0) {}
 
+	OctreeNode(uint32_t f_child, u_shortV3& bottom_corn, u_shortV3& top_corn, uint32_t flags)
+		: first_child(f_child), bottom_corner(bottom_corn), top_corner(top_corn), flags(flags) {}
+
 	bool bounds_is_zero()
 	{
 		return top_corner.equal(bottom_corner);
@@ -167,6 +170,8 @@ public:
 	Octree();
 
 	void init(uint16_t max_size);
+
+	void add_node(uint32_t first_child, u_shortV3 bottom_corner, u_shortV3 top_corner, uint32_t flags);
 
 	void insert_node(uint16_t x, uint16_t y, uint16_t z, uint32_t data);
 	void insert_range_node(u_shortV3& min_bound, u_shortV3& max_bound, uint32_t data);
