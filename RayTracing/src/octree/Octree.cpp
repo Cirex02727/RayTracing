@@ -335,11 +335,10 @@ OctreeNode* Octree::find_node(uint16_t x, uint16_t y, uint16_t z, OctreeNode* no
 std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(const Ray& ray, OctreeNode* node)
 {
 	double d = ray_intersect_box(node->bottom_corner, node->top_corner, ray);
-	if (d < 0 && !point_in_box(node->bottom_corner, node->top_corner, (glm::vec3) ray.Origin))
-		return { nullptr, glm::vec3(), glm::vec3() };
-
 	glm::vec3 ray_pos = d < 0 ? ray.Origin : ray.Origin + ray.Direction * glm::vec3(d);
-	glm::vec3 pos = glm::round(ray_pos);
+	glm::vec3 pos = glm::floor(ray_pos);
+	if (d < 0 && !point_in_box(node->bottom_corner, node->top_corner, pos))
+		return { nullptr, glm::vec3(), glm::vec3() };
 
 	glm::vec3 step = glm::sign(ray.Direction);
 	glm::vec3 tDelta = glm::vec3{
@@ -371,13 +370,14 @@ std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(const Ray&
 			{
 				if (norm.x == 0 && norm.y == 0 && norm.z == 0)
 				{
-					glm::vec3 localPoint = glm::abs(ray_pos - (pos + 0.5f));
+					glm::vec3 round_pos = glm::round(ray_pos);
+					glm::vec3 localPoint = glm::abs(ray_pos - (round_pos + 0.5f));
 					if (std::abs(0.5f - localPoint.x) < std::abs(0.5f - localPoint.y))
-						if (std::abs(0.5f - localPoint.x) < std::abs(0.5f - localPoint.z))  norm = glm::vec3(pos.x == 16 ? 1 : -1, 0, 0);
-						else                             norm = glm::vec3(0, 0, pos.z == 16 ? 1 : -1);
+						if (std::abs(0.5f - localPoint.x) < std::abs(0.5f - localPoint.z))  norm = glm::vec3(round_pos.x == 16 ? 1 : -1, 0, 0);
+						else                             norm = glm::vec3(0, 0, round_pos.z == 16 ? 1 : -1);
 					else
-						if (std::abs(0.5f - localPoint.y) < std::abs(0.5f - localPoint.z)) norm = glm::vec3(0, pos.y == 16 ? 1 : -1, 0);
-						else                             norm = glm::vec3(0, 0, pos.z == 16 ? 1 : -1);
+						if (std::abs(0.5f - localPoint.y) < std::abs(0.5f - localPoint.z)) norm = glm::vec3(0, round_pos.y == 16 ? 1 : -1, 0);
+						else                             norm = glm::vec3(0, 0, round_pos.z == 16 ? 1 : -1);
 				}
 				return { subNode, pos, norm };
 			}
@@ -439,7 +439,7 @@ double Octree::ray_intersect_box(u_shortV3& min, u_shortV3& max, const Ray& ray)
 
 bool Octree::point_in_box(u_shortV3& min, u_shortV3& max, glm::vec3& p)
 {
-	return min.x <= p.x && p.x <= (max.x + 1) && min.y <= p.y && p.y <= (max.y + 1) && min.z <= p.z && p.z <= (max.z + 1);
+	return min.x <= p.x && p.x <= max.x && min.y <= p.y && p.y <= max.y && min.z <= p.z && p.z <= max.z;
 }
 
 uint16_t Octree::find_node_data(uint16_t x, uint16_t y, uint16_t z)

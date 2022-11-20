@@ -181,7 +181,7 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 	m_ImageData = new uint32_t[width * height];
 }
 
-void Renderer::Render(const Scene& scene, const Camera& camera)
+void Renderer::Render(const Scene& scene, const Camera& camera, bool& render_light, bool& render_normal)
 {
 	m_ActiveScene = &scene;
 	m_ActiveCamera = &camera;
@@ -197,7 +197,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	{
 		for (unsigned char i = 0; i < num_threads; i++)
 		{
-			threads.emplace_back([this, &stepX, i, &stepY, j, &num_threads, &totMs]() {
+			threads.emplace_back([this, &stepX, i, &stepY, j, &num_threads, &totMs, &render_light, &render_normal]() {
 				Walnut::Timer t;
 				
 				uint32_t startX = stepX * i, startY = stepY * j;
@@ -214,7 +214,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 							int a = 0;
 						}
 
-						glm::vec4 color = PerPixel(x, y);
+						glm::vec4 color = PerPixel(x, y, render_light, render_normal);
 
 						// Crosshair
 						if (std::abs(m_FinalImage->GetWidth() / 2.0f - x) < 3 &&
@@ -241,7 +241,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	m_FinalImage->SetData(m_ImageData);
 }
 
-glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
+glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& render_normal)
 {
 	Ray ray{};
 	ray.Origin = m_ActiveCamera->GetPosition();
@@ -274,7 +274,10 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		// color += sphereColor * multiplier;
 
 		if (paylod.OctreeNode)
-			color = paylod.OctreeNode->get_color() * lightIntensity;
+			if(render_normal)
+				color = (paylod.WorldNormal + 1.0f) / 2.0f;
+			else
+				color = paylod.OctreeNode->get_color() * (render_light ? lightIntensity : 1.0f);
 		else
 			color = glm::vec3(1, 0, 1) * lightIntensity;
 

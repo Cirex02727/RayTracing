@@ -69,7 +69,7 @@ public:
 
 	virtual void OnUIRender() override
 	{
-		ImGui::Begin("Settings");
+		ImGui::Begin("Global Info");
 		ImGui::Text("Last render: %.1ffps (%.3fms)", (1000 / m_LastRenderTime), m_LastRenderTime);
 		if (ImGui::Button("Render"))
 		{
@@ -85,6 +85,11 @@ public:
 		const glm::vec3& cameraRot = m_Camera.GetDirection();
 		ImGui::Text("Camera Pos: %.1f; %.1f; %.1f", cameraPos.x, cameraPos.y, cameraPos.z);
 		ImGui::Text("Camera Rot: %.1f; %.1f; %.1f", cameraRot.x, cameraRot.y, cameraRot.z);
+		ImGui::End();
+
+		ImGui::Begin("Render Settings");
+		ImGui::Checkbox("Render Light:", &m_RenderLight);
+		ImGui::Checkbox("Render Normal:", &m_RenderNormal);
 		ImGui::End();
 
 		ImGui::Begin("Scene");
@@ -127,7 +132,7 @@ public:
 
 		m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
 		m_Camera.OnResize(m_ViewportWidth, m_ViewportHeight);
-		m_Renderer.Render(m_Scene, m_Camera);
+		m_Renderer.Render(m_Scene, m_Camera, m_RenderLight, m_RenderNormal);
 
 		// m_ComputeShader.Render();
 		// m_ComputeShader.UpdateBuffers(m_Color);
@@ -461,6 +466,8 @@ private:
 	glm::vec3 m_Color { 0.8f, 0.2, 0.3 };
 
 	float m_LastRenderTime = 0;
+
+	bool m_RenderLight = true, m_RenderNormal;
 };
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
