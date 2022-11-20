@@ -15,6 +15,8 @@
 
 #include "octree/Octree.h"
 
+#include "utils/Loader.h"
+
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 
@@ -40,6 +42,8 @@ public:
 	ExampleLayer()
 		: m_Camera(45.0f, 0.1f, 100.0f), m_ComputeShader(1600, 874)
 	{
+		Loader::load_scene("./main.scene", m_Camera, m_RenderLight, m_RenderNormal);
+
 		{
 			Sphere sphere;
 			sphere.Position = { 0.0f, 0.0f, 0.0f };
@@ -55,6 +59,11 @@ public:
 			sphere.Albedo = { 0.2f, 0.3f, 1.0f };
 			m_Scene.Spheres.push_back(sphere);
 		}
+	}
+
+	~ExampleLayer()
+	{
+		Loader::dump_scene("./main.scene", m_Camera, m_RenderLight, m_RenderNormal);
 	}
 
 	virtual void OnUpdate(float ts) override

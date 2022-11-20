@@ -11,6 +11,8 @@ public:
 	void OnUpdate(float ts);
 	void OnResize(uint32_t width, uint32_t height);
 
+	void SetData(float verticalFOV, float nearClip, float farClip, glm::vec3& position, glm::vec3& direction);
+
 	const glm::mat4& GetProjection() const { return m_Projection; }
 	const glm::mat4& GetInverseProjection() const { return m_InverseProjection; }
 	const glm::mat4& GetView() const { return m_View; }
@@ -21,6 +23,10 @@ public:
 
 	const std::vector<glm::vec3>& GetRayDirections() const { return m_RayDirections; }
 	const std::vector<glm::vec3>& GetInvDirections() const { return m_InvDirections; }
+
+	const float GetVerticalFOV() const { return m_VerticalFOV; }
+	const float GetNearClip() const { return m_NearClip; }
+	const float GetFarClip() const { return m_FarClip; }
 
 	float GetRotationSpeed();
 private:

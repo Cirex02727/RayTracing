@@ -84,9 +84,9 @@ struct OctreeNode
 	void calc_corners_by_pos_id(u_shortV3& bottom_corn, u_shortV3& top_corn, uint8_t i)
 	{
 		u_shortV3 mid = {
-			(uint16_t) ((top_corn.x + bottom_corn.x) * 0.5f),
-			(uint16_t) ((top_corn.y + bottom_corn.y) * 0.5f),
-			(uint16_t) ((top_corn.z + bottom_corn.z) * 0.5f)
+			(uint16_t) ((top_corn.x + bottom_corn.x) / 2.0f),
+			(uint16_t) ((top_corn.y + bottom_corn.y) / 2.0f),
+			(uint16_t) ((top_corn.z + bottom_corn.z) / 2.0f)
 		};
 
 		if (mid.equal(bottom_corn))
@@ -144,9 +144,9 @@ struct OctreeNode
 	float calc_dist_from_ray_pow2(const glm::vec3& rayOrigin)
 	{
 		u_shortV3 mid = {
-			(uint16_t)((top_corner.x + bottom_corner.x) * 0.5f),
-			(uint16_t)((top_corner.y + bottom_corner.y) * 0.5f),
-			(uint16_t)((top_corner.z + bottom_corner.z) * 0.5f)
+			(uint16_t)((top_corner.x + bottom_corner.x) / 2.0f),
+			(uint16_t)((top_corner.y + bottom_corner.y) / 2.0f),
+			(uint16_t)((top_corner.z + bottom_corner.z) / 2.0f)
 		};
 		return (mid.x - rayOrigin.x) * (mid.x - rayOrigin.x) +
 			(mid.y - rayOrigin.y) * (mid.y - rayOrigin.y) +

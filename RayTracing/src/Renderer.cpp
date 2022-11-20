@@ -6,6 +6,7 @@
 #include "utils/Loader.h"
 
 #include <thread>
+#include <glm/gtx/string_cast.hpp>
 
 namespace Utils
 {
@@ -47,11 +48,11 @@ Renderer::Renderer()
 {
 	Walnut::Random::Init();
 
-	Loader::load_vox("./models/model_128.vox", m_Octree);
+	// Loader::load_vox("./models/model_128.vox", m_Octree);
 
-	Loader::dump_oct("./models/model_128.oct", m_Octree);
+	// Loader::dump_oct("./models/model_128.oct", m_Octree);
 
-	m_Octree.nodes.clear();
+	// m_Octree.nodes.clear();
 
 	Loader::load_oct("./models/model_128.oct", m_Octree);
 
@@ -94,7 +95,7 @@ Renderer::Renderer()
 		Walnut::Timer t;
 
 		float totTime = 0;
-		uint32_t step = 100, count = 1'000;
+		uint32_t step = 200, count = 1'000'000;
 
 		for (uint32_t i = 0; i < step; i++)
 		{
@@ -147,7 +148,7 @@ Renderer::Renderer()
 	}
 
 	/*
-	* General Benchmark:
+	* General Benchmark: i5 10600K
 	* 
 	* Find Node      x200.000 |  4956.89 ms |    0.02478450 ms each | 24.78450 ns each |       1.000
 	* Find Node Data x200.000 |  4997.88 ms |    0.02498940 ms each | 24.98940 ns each |       1.000
@@ -214,12 +215,6 @@ void Renderer::Render(const Scene& scene, const Camera& camera, bool& render_lig
 				{
 					for (uint32_t x = startX; x < endX; x++)
 					{
-						if (std::abs(m_FinalImage->GetWidth() / 2.0f - x) < 1 &&
-							std::abs(m_FinalImage->GetHeight() / 2.0f - y) < 1)
-						{
-							int a = 0;
-						}
-
 						glm::vec4 color = PerPixel(x, y, render_light, render_normal);
 
 						// Crosshair
@@ -259,6 +254,13 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& r
 
 	float multiplier = 1.0f;
 
+	bool is_crosshair = false;
+	if (std::abs(m_FinalImage->GetWidth() / 2.0f - x) < 1 &&
+		std::abs(m_FinalImage->GetHeight() / 2.0f - y) < 1)
+	{
+		is_crosshair = true;
+	}
+
 	int bounces = 1;
 	for (int i = bounces; i >= 0; i--)
 	{
@@ -286,6 +288,9 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& r
 				color = paylod.OctreeNode->get_color() * (render_light ? lightIntensity : 1.0f);
 		else
 			color = glm::vec3(1, 0, 1) * lightIntensity;
+
+		// if (is_crosshair)
+		// 	std::cout << "Normal Crosshair: " << glm::to_string(paylod.WorldNormal) << std::endl;
 
 		if (i == 1)
 			break;

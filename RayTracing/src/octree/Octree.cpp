@@ -29,9 +29,9 @@ void Octree::insert_node(uint16_t x, uint16_t y, uint16_t z, uint32_t data)
 
 	while (!node->bounds_is_zero())
 	{
-		mid_x = (uint16_t) ((node->bottom_corner.x + node->top_corner.x) * 0.5f);
-		mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) * 0.5f);
-		mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) * 0.5f);
+		mid_x = (uint16_t) ((node->bottom_corner.x + node->top_corner.x) / 2.0f);
+		mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) / 2.0f);
+		mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) / 2.0f);
 
 		pos = -1;
 		if (x <= mid_x)
@@ -110,9 +110,9 @@ void Octree::insert_range_node(u_shortV3& min_bound, u_shortV3& max_bound, uint3
 			continue;
 		}
 
-		mid_x = (uint16_t) ((node->bottom_corner.x + node->top_corner.x) * 0.5f);
-		mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) * 0.5f);
-		mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) * 0.5f);
+		mid_x = (uint16_t) ((node->bottom_corner.x + node->top_corner.x) / 2.0f);
+		mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) / 2.0f);
+		mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) / 2.0f);
 
 		if (min_bound.less_equals(node->bottom_corner) && max_bound.greater_equals(node->top_corner))
 		{
@@ -237,9 +237,9 @@ uint16_t Octree::find_node_data(uint16_t x, uint16_t y, uint16_t z, OctreeNode* 
 	if (node->bounds_is_zero() || node->is_full())
 		return node->flags;
 
-	uint16_t mid_x = (uint16_t) ((node->bottom_corner.x + node->top_corner.x) * 0.5f);
-	uint16_t mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) * 0.5f);
-	uint16_t mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) * 0.5f);
+	uint16_t mid_x = (uint16_t) ((node->bottom_corner.x + node->top_corner.x) / 2.0f);
+	uint16_t mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) / 2.0f);
+	uint16_t mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) / 2.0f);
 
 	uint8_t pos = -1;
 	if (x <= mid_x)
@@ -289,9 +289,9 @@ OctreeNode* Octree::find_node(uint16_t x, uint16_t y, uint16_t z, OctreeNode* no
 	if (node->bounds_is_zero() || node->is_full())
 		return node;
 
-	uint16_t mid_x = (uint16_t) ((node->bottom_corner.x + node->top_corner.x) * 0.5f);
-	uint16_t mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) * 0.5f);
-	uint16_t mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) * 0.5f);
+	uint16_t mid_x = (uint16_t) ((node->bottom_corner.x + node->top_corner.x) / 2.0f);
+	uint16_t mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) / 2.0f);
+	uint16_t mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) / 2.0f);
 
 	uint8_t pos = -1;
 	if (x <= mid_x)
@@ -378,11 +378,15 @@ std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(const Ray&
 					glm::vec3 round_pos = glm::round(ray_pos);
 					glm::vec3 localPoint = glm::abs(ray_pos - (round_pos + 0.5f));
 					if (std::abs(0.5f - localPoint.x) < std::abs(0.5f - localPoint.y))
-						if (std::abs(0.5f - localPoint.x) < std::abs(0.5f - localPoint.z))  norm = glm::vec3(round_pos.x == 16 ? 1 : -1, 0, 0);
-						else                             norm = glm::vec3(0, 0, round_pos.z == 16 ? 1 : -1);
+						if (std::abs(0.5f - localPoint.x) < std::abs(0.5f - localPoint.z))
+							norm = glm::vec3(round_pos.x == (node->top_corner.x + 1) ? 1 : -1, 0, 0);
+						else
+							norm = glm::vec3(0, 0, round_pos.z == (node->top_corner.z + 1) ? 1 : -1);
 					else
-						if (std::abs(0.5f - localPoint.y) < std::abs(0.5f - localPoint.z)) norm = glm::vec3(0, round_pos.y == 16 ? 1 : -1, 0);
-						else                             norm = glm::vec3(0, 0, round_pos.z == 16 ? 1 : -1);
+						if (std::abs(0.5f - localPoint.y) < std::abs(0.5f - localPoint.z))
+							norm = glm::vec3(0, round_pos.y == (node->top_corner.y + 1) ? 1 : -1, 0);
+						else
+							norm = glm::vec3(0, 0, round_pos.z == (node->top_corner.z + 1) ? 1 : -1);
 				}
 				return { subNode, pos, norm };
 			}

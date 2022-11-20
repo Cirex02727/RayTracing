@@ -11,8 +11,8 @@ using namespace Walnut;
 Camera::Camera(float verticalFOV, float nearClip, float farClip)
 	: m_VerticalFOV(verticalFOV), m_NearClip(nearClip), m_FarClip(farClip)
 {
-	m_Position = glm::vec3(25.173401, 25.220572, -13.108231);
-	m_ForwardDirection = glm::vec3(-0.480590, -0.568847, 0.667418);
+	m_Position = glm::vec3(297.191681, 294.346100, 283.827911);
+	m_ForwardDirection = glm::vec3(-0.579513, -0.595408, -0.556465);
 
 	RecalculateView();
 	RecalculateRayDirections();
@@ -37,10 +37,10 @@ void Camera::OnUpdate(float ts)
 	constexpr glm::vec3 upDirection(0.0f, 1.0f, 0.0f);
 	glm::vec3 rightDirection = glm::cross(m_ForwardDirection, upDirection);
 
-	float speed = 20.0f;
+	float speed = 30.0f;
 
 	if (Input::IsKeyDown(KeyCode::LeftShift))
-		speed *= 2.5f;
+		speed *= 8.0f;
 
 	// Movement
 	if (Input::IsKeyDown(KeyCode::W))
@@ -103,6 +103,19 @@ void Camera::OnResize(uint32_t width, uint32_t height)
 	m_ViewportHeight = height;
 
 	RecalculateProjection();
+	RecalculateRayDirections();
+}
+
+void Camera::SetData(float verticalFOV, float nearClip, float farClip, glm::vec3& position, glm::vec3& direction)
+{
+	m_VerticalFOV = verticalFOV;
+	m_NearClip = nearClip;
+	m_FarClip = farClip;
+
+	m_Position = position;
+	m_ForwardDirection = direction;
+
+	RecalculateView();
 	RecalculateRayDirections();
 }
 

@@ -52,6 +52,30 @@ void Loader::load_oct(const char* file_name, Octree& octree)
 	file.close();
 }
 
+void Loader::load_scene(const char* file_name, Camera& camera, bool& render_light, bool& render_normal)
+{
+	std::fstream file(file_name, std::ios::binary | std::ios::in);
+
+	// Write Camera
+	float vertical_fov;
+	float near_clip;
+	float far_clip;
+	file.read((char*) &vertical_fov, sizeof(float));
+	file.read((char*) &near_clip, sizeof(float));
+	file.read((char*) &far_clip, sizeof(float));
+
+	glm::vec3 position, direction;
+	file.read((char*) &position, sizeof(glm::vec3));
+	file.read((char*) &direction, sizeof(glm::vec3));
+
+	camera.SetData(vertical_fov, near_clip, far_clip, position, direction);
+
+	file.read((char*) &render_light, sizeof(bool));
+	file.read((char*) &render_normal, sizeof(bool));
+
+	file.close();
+}
+
 void Loader::dump_oct(const char* file_name, Octree& octree)
 {
 	std::fstream file(file_name, std::ios::binary | std::ios::out);
@@ -72,6 +96,29 @@ void Loader::dump_oct(const char* file_name, Octree& octree)
 
 		file.write((char*) &node.flags, sizeof(uint32_t));
 	}
+
+	file.close();
+}
+
+void Loader::dump_scene(const char* file_name, Camera& camera, bool& render_light, bool& render_normal)
+{
+	std::fstream file(file_name, std::ios::binary | std::ios::out);
+
+	// Write Camera
+	float vertical_fov = camera.GetVerticalFOV();
+	float near_clip = camera.GetNearClip();
+	float far_clip = camera.GetFarClip();
+	file.write((char*) &vertical_fov, sizeof(float));
+	file.write((char*) &near_clip, sizeof(float));
+	file.write((char*) &far_clip, sizeof(float));
+
+	glm::vec3 position = camera.GetPosition();
+	glm::vec3 direction = camera.GetDirection();
+	file.write((char*) &position, sizeof(glm::vec3));
+	file.write((char*) &direction, sizeof(glm::vec3));
+
+	file.write((char*) &render_light, sizeof(bool));
+	file.write((char*) &render_normal, sizeof(bool));
 
 	file.close();
 }
