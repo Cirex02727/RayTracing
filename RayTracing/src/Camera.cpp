@@ -11,8 +11,11 @@ using namespace Walnut;
 Camera::Camera(float verticalFOV, float nearClip, float farClip)
 	: m_VerticalFOV(verticalFOV), m_NearClip(nearClip), m_FarClip(farClip)
 {
-	m_ForwardDirection = glm::vec3(0, 0, -1);
-	m_Position = glm::vec3(0, 0, 3);
+	m_Position = glm::vec3(-5, 0, -5);
+	m_ForwardDirection = glm::vec3(0.717, 0, 0.717);
+
+	RecalculateView();
+	RecalculateRayDirections();
 }
 
 void Camera::OnUpdate(float ts)
@@ -34,7 +37,10 @@ void Camera::OnUpdate(float ts)
 	constexpr glm::vec3 upDirection(0.0f, 1.0f, 0.0f);
 	glm::vec3 rightDirection = glm::cross(m_ForwardDirection, upDirection);
 
-	float speed = 5.0f;
+	float speed = 20.0f;
+
+	if (Input::IsKeyDown(KeyCode::LeftShift))
+		speed *= 2.5f;
 
 	// Movement
 	if (Input::IsKeyDown(KeyCode::W))
@@ -120,6 +126,7 @@ void Camera::RecalculateView()
 void Camera::RecalculateRayDirections()
 {
 	m_RayDirections.resize(m_ViewportWidth * m_ViewportHeight);
+	m_InvDirections.resize(m_ViewportWidth * m_ViewportHeight);
 
 	for (uint32_t y = 0; y < m_ViewportHeight; y++)
 	{
@@ -131,6 +138,7 @@ void Camera::RecalculateRayDirections()
 			glm::vec4 target = m_InverseProjection * glm::vec4(coord.x, coord.y, 1, 1);
 			glm::vec3 rayDirection = glm::vec3(m_InverseView * glm::vec4(glm::normalize(glm::vec3(target) / target.w), 0)); // World space
 			m_RayDirections[x + y * m_ViewportWidth] = rayDirection;
+			m_InvDirections[x + y * m_ViewportWidth] = glm::vec3(1) / rayDirection;
 		}
 	}
 }

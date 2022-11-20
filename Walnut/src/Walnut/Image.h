@@ -24,13 +24,24 @@ namespace Walnut
 
 		VkDescriptorSet GetDescriptorSet() const { return m_DescriptorSet; }
 
+		VkImage GetImage() const { return m_Image; }
+
+		inline void GetDescriptorImageInfo(VkDescriptorImageInfo& descriptor) const
+		{
+			descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+			descriptor.imageView = m_ImageView;
+			descriptor.sampler = m_Sampler;
+		}
+
 		void Resize(uint32_t width, uint32_t height);
 
 		uint32_t GetWidth() const { return m_Width; }
 		uint32_t GetHeight() const { return m_Height; }
+
 	private:
 		void AllocateMemory(uint64_t size);
 		void Release();
+
 	private:
 		uint32_t m_Width = 0, m_Height = 0;
 

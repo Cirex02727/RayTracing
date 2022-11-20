@@ -104,19 +104,22 @@ namespace Walnut
 			info.arrayLayers = 1;
 			info.samples = VK_SAMPLE_COUNT_1_BIT;
 			info.tiling = VK_IMAGE_TILING_OPTIMAL;
-			info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+			info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 			info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			err = vkCreateImage(device, &info, nullptr, &m_Image);
 			check_vk_result(err);
+
 			VkMemoryRequirements req;
 			vkGetImageMemoryRequirements(device, m_Image, &req);
+
 			VkMemoryAllocateInfo alloc_info = {};
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			alloc_info.allocationSize = req.size;
 			alloc_info.memoryTypeIndex = Utils::GetVulkanMemoryType(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, req.memoryTypeBits);
 			err = vkAllocateMemory(device, &alloc_info, nullptr, &m_Memory);
 			check_vk_result(err);
+
 			err = vkBindImageMemory(device, m_Image, m_Memory, 0);
 			check_vk_result(err);
 		}
@@ -210,7 +213,6 @@ namespace Walnut
 				err = vkBindBufferMemory(device, m_StagingBuffer, m_StagingBufferMemory, 0);
 				check_vk_result(err);
 			}
-
 		}
 
 		// Upload to Buffer

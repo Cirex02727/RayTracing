@@ -20,6 +20,7 @@ public:
 	const glm::vec3& GetDirection() const { return m_ForwardDirection; }
 
 	const std::vector<glm::vec3>& GetRayDirections() const { return m_RayDirections; }
+	const std::vector<glm::vec3>& GetInvDirections() const { return m_InvDirections; }
 
 	float GetRotationSpeed();
 private:
@@ -40,7 +41,7 @@ private:
 	glm::vec3 m_ForwardDirection{0.0f, 0.0f, 0.0f};
 
 	// Cached ray directions
-	std::vector<glm::vec3> m_RayDirections;
+	std::vector<glm::vec3> m_RayDirections, m_InvDirections;
 
 	glm::vec2 m_LastMousePosition{ 0.0f, 0.0f };
 

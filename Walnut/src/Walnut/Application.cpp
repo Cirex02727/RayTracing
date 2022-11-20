@@ -707,7 +707,7 @@ namespace Walnut
 		return g_Device;
 	}
 
-	VkCommandBuffer Application::GetCommandBuffer(bool begin)
+	VkCommandBuffer Application::GetCommandBuffer(bool begin, VkCommandBufferUsageFlags commandFlags)
 	{
 		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
 
@@ -725,7 +725,7 @@ namespace Walnut
 
 		VkCommandBufferBeginInfo begin_info = {};
 		begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		begin_info.flags |= commandFlags;
 		err = vkBeginCommandBuffer(command_buffer, &begin_info);
 		check_vk_result(err);
 

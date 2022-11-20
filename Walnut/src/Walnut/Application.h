@@ -52,13 +52,15 @@ namespace Walnut
 		static VkPhysicalDevice GetPhysicalDevice();
 		static VkDevice GetDevice();
 
-		static VkCommandBuffer GetCommandBuffer(bool begin);
+		static VkCommandBuffer GetCommandBuffer(bool begin, VkCommandBufferUsageFlags commandFlags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		static void FlushCommandBuffer(VkCommandBuffer commandBuffer);
 
 		static void SubmitResourceFree(std::function<void()>&& func);
+
 	private:
 		void Init();
 		void Shutdown();
+
 	private:
 		ApplicationSpecification m_Specification;
 		GLFWwindow* m_WindowHandle = nullptr;
