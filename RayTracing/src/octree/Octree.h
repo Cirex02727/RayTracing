@@ -1,8 +1,9 @@
 #pragma once
 
-#include <vector>
-
 #include "../Ray.h"
+
+#include <vector>
+#include <queue>
 
 // 6 bytes | 48 bit
 struct u_shortV3
@@ -46,6 +47,11 @@ struct u_shortV3
 	bool equal(u_shortV3& v)
 	{
 		return x == v.x && y == v.y && z == v.z;
+	}
+
+	bool equal(uint16_t& x, uint16_t& y, uint16_t& z)
+	{
+		return x == x && y == y && z == z;
 	}
 
 	bool is_zero()
@@ -176,6 +182,8 @@ public:
 	void insert_node(uint16_t x, uint16_t y, uint16_t z, uint32_t data);
 	void insert_range_node(u_shortV3& min_bound, u_shortV3& max_bound, uint32_t data);
 
+	void collapse_nodes();
+
 	uint16_t find_node_data(uint16_t x, uint16_t y, uint16_t z);
 
 	OctreeNode* find_node(uint16_t x, uint16_t y, uint16_t z);
@@ -186,6 +194,14 @@ public:
 
 private:
 	void subdivide_node(OctreeNode*& mod_node, uint32_t& first_child);
+
+	std::vector<std::pair<uint32_t, std::deque<uint32_t>>> check_collapse_path(uint32_t node_idx);
+
+	std::vector<uint32_t> collapse(uint32_t& node_idx);
+
+	std::tuple<bool, uint32_t, std::vector<uint32_t>> check_recursively_equal_childs(OctreeNode* node);
+
+	void remove_nodes(std::vector<uint32_t>& sub_nodes);
 
 	uint16_t find_node_data(uint16_t x, uint16_t y, uint16_t z, OctreeNode* node);
 

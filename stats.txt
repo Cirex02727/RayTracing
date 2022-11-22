@@ -1,0 +1,37 @@
+DEBUG MODE
+
+16 x 16 x 16
+Non collapse
+Convert & Dump => 65'172 B -> 63.644 KB : 15.5461 ms  | amount : 4'073
+Load           => 2.7119 ms
+
+Collapse
+Convert & Dump => 43'924 B -> 42.894 KB : 28.491 ms  | amount : 2'745
+Load           => 1.9173 ms
+
+32 x 32 x32
+Non collapse
+Convert & Dump => 469'012 B -> 458.019 KB : 149.901 ms  | amount : 29'313
+Load           => 18.8639 ms
+
+Collapse
+Convert & Dump => 183'956 B -> 179.644 KB : 352.414 ms  | amount : 11'497
+Load           => 7.1651 ms
+
+64 x 64 x 64
+Non collapse
+Convert & Dump => 3'668'372 B -> 3.498 MB : 1'402.73 ms  | amount : 229'273
+Load           => 150.513 ms
+
+Collapse
+Convert & Dump => 659'092 B -> 643.644 KB : 4'709.51 ms  | amount : 41'193
+Load           => 25.5591 ms
+
+128 x 128 x 128
+Non collapse
+Convert & Dump => 30'478'228 B -> 29.066 MB : 12'022.1 ms  | amount : 1'904'889
+Load           => 1'247.83 ms
+
+Collapse
+Convert & Dump => 3'311'892 B -> 3.158 MB : 113'211 ms  | amount : 206'993
+Load           => 131.411 ms

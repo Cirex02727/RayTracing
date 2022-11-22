@@ -48,13 +48,33 @@ Renderer::Renderer()
 {
 	Walnut::Random::Init();
 
-	// Loader::load_vox("./models/model_128.vox", m_Octree);
+	{
+		Walnut::Timer t;
 
-	// Loader::dump_oct("./models/model_128.oct", m_Octree);
+		// Loader::load_vox("./models/model_128.vox", m_Octree);
+		// m_Octree.collapse_nodes();
+		// Loader::dump_oct("./models/model_128.oct", m_Octree);
 
-	// m_Octree.nodes.clear();
+		// Loader::load_oct("./models/model_128.oct", m_Octree);
+		// m_Octree.collapse_nodes();
 
-	Loader::load_oct("./models/model_128.oct", m_Octree);
+
+		// Test Collapse
+		// uint16_t octree_size = 256;
+		// m_Octree.init(octree_size);
+		// for(uint16_t z = 0; z < octree_size; z++)
+		// 	for (uint16_t y = 0; y < octree_size; y++)
+		// 		for (uint16_t x = 0; x < octree_size; x++)
+		// 		{
+		// 			float n = Walnut::Random::Float();
+		// 			if (n >= 0.8f)
+		// 				m_Octree.insert_node(x, y, z, ((x * 255 / octree_size) << 16) | ((y * 255 / octree_size) << 8) | (z * 255 / octree_size));
+		// 		}
+
+		Loader::load_oct("./models/model_random_256.oct", m_Octree);
+
+		std::cout << "Time: " << t.ElapsedMillis() << std::endl;
+	}
 
 	// Generate Octree
 	{
