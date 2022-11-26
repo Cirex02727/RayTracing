@@ -13,7 +13,7 @@
 
 #include "ComputeShader.h"
 
-#include "octree/Octree.h"
+#include "data_structs/Octree.h"
 
 #include "utils/Loader.h"
 
@@ -22,6 +22,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include "utils/Utils.h"
 
 class ExampleLayer : public Walnut::Layer
 {
@@ -94,6 +95,22 @@ public:
 		const glm::vec3& cameraRot = m_Camera.GetDirection();
 		ImGui::Text("Camera Pos: %.1f; %.1f; %.1f", cameraPos.x, cameraPos.y, cameraPos.z);
 		ImGui::Text("Camera Rot: %.1f; %.1f; %.1f", cameraRot.x, cameraRot.y, cameraRot.z);
+
+		ImGui::Separator();
+
+		for (int i = 0; i < m_Renderer.m_Octrees.size(); i++)
+		{
+			ImGui::PushID(i);
+
+			Octree& octree = m_Renderer.m_Octrees[i];
+			float d = glm::distance(octree.m_Nodes[0].top_corner.add(glm::vec3(1)) / 2.0f, m_Camera.GetPosition() - octree.m_Position);
+			ImGui::Text("Octree %i: %.2f - Max Depth: %i", i, d, Utils::GetLOD(d, octree.m_Nodes[0].top_corner.max(), octree.m_MaxDepth));
+
+			ImGui::Separator();
+
+			ImGui::PopID();
+		}
+
 		ImGui::End();
 
 		ImGui::Begin("Render Settings");

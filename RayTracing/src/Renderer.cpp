@@ -4,108 +4,78 @@
 #include "Walnut/Timer.h"
 
 #include "utils/Loader.h"
+#include "utils/Utils.h"
 
-#include <thread>
 #include <glm/gtx/string_cast.hpp>
 
-namespace Utils
-{
-	static uint32_t ConvertToRGBA(const glm::vec4& color)
-	{
-		uint8_t r = (uint8_t)(color.r * 255.0f);
-		uint8_t g = (uint8_t)(color.g * 255.0f);
-		uint8_t b = (uint8_t)(color.b * 255.0f);
-		uint8_t a = (uint8_t)(color.a * 255.0f);
-
-		uint32_t result = (a << 24) | (b << 16) | (g << 8) | r;
-		return result;
-	}
-
-	static glm::vec3 lighting(const glm::vec3& norm, const glm::vec3& pos, const glm::vec3& rd, const glm::vec3& col) {
-		glm::vec3 lightDir = glm::normalize(glm::vec3(-1.0, 3.0, -1.0));
-		float diffuseAttn = std::max(glm::dot(norm, lightDir), 0.0f);
-		glm::vec3 light = glm::vec3(1.0, 0.9, 0.9);
-
-		glm::vec3 ambient = glm::vec3(0.2, 0.2, 0.3);
-
-		glm::vec3 reflected = reflect(rd, norm);
-		float specularAttn = std::max(glm::dot(reflected, lightDir), 0.0f);
-
-		return col * (diffuseAttn * light * glm::vec3(1.0f) + specularAttn * light * glm::vec3(0.6f) + ambient);
-	}
-
-	static glm::vec3 IntToVec3Color(int color)
-	{
-		return glm::vec3(
-			color & 0xff,
-			(color >> 8) & 0xff,
-			(color >> 16) & 0xff
-		);
-	}
-}
+#include <thread>
 
 Renderer::Renderer()
 {
-	Walnut::Random::Init();
+	// Walnut::Random::Init();
 
-	{
-		Walnut::Timer t;
-
-		// Loader::load_vox("./models/model_128.vox", m_Octree);
-		// m_Octree.collapse_nodes();
-		// Loader::dump_oct("./models/model_128.oct", m_Octree);
-
-		// Loader::load_oct("./models/model_128.oct", m_Octree);
-		// m_Octree.collapse_nodes();
-
-
-		// Test Collapse
-		// uint16_t octree_size = 256;
-		// m_Octree.init(octree_size);
-		// for(uint16_t z = 0; z < octree_size; z++)
-		// 	for (uint16_t y = 0; y < octree_size; y++)
-		// 		for (uint16_t x = 0; x < octree_size; x++)
-		// 		{
-		// 			float n = Walnut::Random::Float();
-		// 			if (n >= 0.8f)
-		// 				m_Octree.insert_node(x, y, z, ((x * 255 / octree_size) << 16) | ((y * 255 / octree_size) << 8) | (z * 255 / octree_size));
-		// 		}
-
-		Loader::load_oct("./models/model_random_256.oct", m_Octree);
-
-		std::cout << "Time: " << t.ElapsedMillis() << std::endl;
-	}
+	m_Octrees = std::vector<Octree>(2);
 
 	// Generate Octree
 	{
 		Walnut::Timer t;
-		
-		// Insert Data
+
+		// Loader::load_vox("./models/model_128.vox", m_Octree);
+		// m_Octrees[0].collapse_nodes();
+		// Loader::dump_oct("./models/model_128.oct", m_Octree);
+
+		Loader::load_oct("./models/model_4.oct", m_Octrees[0]);
+		// m_Octrees[0].collapse_nodes();
+		m_Octrees[0].build_lods();
+		m_Octrees[0].calculate_max_depth();
+
+
+		uint16_t octree_size = 64;
 		/*
-		uint16_t octree_size = 256;
-		for (uint16_t z = 0; z < octree_size; z++)
+		m_Octrees[0].init(octree_size);
+		for(uint16_t z = 0; z < octree_size; z++)
 			for (uint16_t y = 0; y < octree_size; y++)
 				for (uint16_t x = 0; x < octree_size; x++)
 				{
 					float n = Walnut::Random::Float();
 					if (n >= 0.9f)
-						m_Octree.insert_node(x, y, z, ((x * 255 / octree_size) << 16) | ((y * 255 / octree_size) << 8) | (z * 255 / octree_size));
+						m_Octrees[0].insert_node(x, y, z, ((x * 255 / octree_size) << 16) | ((y * 255 / octree_size) << 8) | (z * 255 / octree_size));
 				}
 		*/
 
+		std::cout << "Fill Octree0: " << t.ElapsedMillis() << " ms " << ((m_Octrees[0].m_Nodes.size() * sizeof(OctreeNode)) / 1024.0f / 1024) << "MB" << std::endl;
+
 		/*
-		for (uint16_t z = 0; z < 16; z++)
-			for (uint16_t y = 0; y < 16; y++)
-				for (uint16_t x = 0; x < 16; x++)
-					if(x == y && y == z)
-						m_Octree.insert_node(x, y, z, (x << 16) | (y << 8) | z);
+		octree_size = 64;
+		m_Octrees[1].init(octree_size);
+		for (uint16_t z = 0; z < octree_size; z++)
+			for (uint16_t y = 0; y < octree_size; y++)
+				for (uint16_t x = 0; x < octree_size; x++)
+				{
+					float n = Walnut::Random::Float();
+					if (n >= 0.95f)
+						m_Octrees[1].insert_node(x, y, z, ((x * 255 / octree_size) << 16) | ((y * 255 / octree_size) << 8) | (z * 255 / octree_size));
+				}
 		*/
 
-		// m_Octree.insert_node(0, 256, 0, 0xff0000);
-		// m_Octree.insert_node(511, 511, 0, 0x00ff00);
-		// m_Octree.insert_range_node(u_shortV3{ 0 }, u_shortV3{ 511, 255, 511 }, 0x0000ff);
+		Loader::load_oct("./models/model_32.oct", m_Octrees[1]);
+		m_Octrees[1].build_lods();
+		m_Octrees[1].calculate_max_depth();
 
-		std::cout << "Fill Octree: " << t.ElapsedMillis() << " ms " << ((m_Octree.nodes.size() * sizeof(OctreeNode)) / 1024.0f / 1024) << "MB" << std::endl;
+		std::cout << "Fill Octree1: " << t.ElapsedMillis() << " ms " << ((m_Octrees[1].m_Nodes.size() * sizeof(OctreeNode)) / 1024.0f / 1024) << "MB" << std::endl;
+
+		m_Octrees[0].m_Position = glm::vec3{ 0, 0, 0 };
+		m_Octrees[1].m_Position = glm::vec3{ 16, 0, 16 };
+
+
+		t.Reset();
+
+		for (Octree& octree : m_Octrees)
+		{
+			octree.build_lods();
+		}
+
+		std::cout << "Build lods: " << m_Octrees.size() << " x " << t.ElapsedMillis() << " ms" << std::endl;
 	}
 
 	// Benchmark
@@ -122,8 +92,10 @@ Renderer::Renderer()
 			t.Reset();
 
 			// Find Node
+			OctreeNode* n;
+			short max_depth = 0;
 			for (uint32_t i = 0; i < count; i++)
-				OctreeNode* n = m_Octree.find_node(0, 0, 0);
+				bool found = m_Octrees[0].find_node(0, 0, 0, n, max_depth);
 
 			totTime += t.ElapsedMillis();
 		}
@@ -138,7 +110,7 @@ Renderer::Renderer()
 
 			// Find Node Data
 			for (uint32_t i = 0; i < count; i++)
-				uint16_t v = m_Octree.find_node_data(0, 0, 0);
+				uint16_t v = m_Octrees[0].find_node_data(0, 0, 0);
 
 			totTime += t.ElapsedMillis();
 		}
@@ -159,34 +131,13 @@ Renderer::Renderer()
 			ray.MaxDistance = 100;
 
 			for (uint32_t i = 0; i < count; i++)
-				auto [node, pos, norm] = m_Octree.ray_travel(ray);
+				auto [node, pos, norm] = m_Octrees[0].ray_travel(ray);
 
 			totTime += t.ElapsedMillis();
 		}
 
 		std::cout << "Ray Travel x" << step << " | " << totTime << " ms | " << (totTime / step) << " ms each | " << (((totTime / step) / count) * 1'000'000) << " ns each | " << count << std::endl;
 	}
-
-	/*
-	* General Benchmark: i5 10600K
-	* 
-	* Find Node      x200.000 |  4956.89 ms |    0.02478450 ms each | 24.78450 ns each |       1.000
-	* Find Node Data x200.000 |  4997.88 ms |    0.02498940 ms each | 24.98940 ns each |       1.000
-	* Ray Travel     x200.000 |  1681.49 ms |    0.00840746 ms each |  8.40746 ns each |       1.000
-	* 
-	* Find Node          x200 |  5037.47 ms |   25.18730000 ms each | 25.18730 ns each |   1.000.000
-	* Find Node Data     x200 |  5039.10 ms |   25.19550000 ms each | 25.19550 ns each |   1.000.000
-	* Ray Travel         x200 |  1663.51 ms |    8.31756000 ms each |  8.31756 ns each |   1.000.000
-	* 
-	* Find Node            x5 | 12191.30 ms | 2438.25000000 ms each | 24.38250 ns each | 100.000.000
-	* Find Node Data       x5 | 12412.80 ms | 2482.56000000 ms each | 24.82560 ns each | 100.000.000
-	* Ray Travel           x5 |  4163.80 ms |  832.75900000 ms each |  8.32759 ns each | 100.000.000
-	* 
-	* 
-	* General Info:
-	* 
-	* Viewport Size | 1600 x 874
-	*/
 }
 
 void Renderer::OnResize(uint32_t width, uint32_t height)
@@ -235,15 +186,16 @@ void Renderer::Render(const Scene& scene, const Camera& camera, bool& render_lig
 				{
 					for (uint32_t x = startX; x < endX; x++)
 					{
+						//else
 						glm::vec4 color = PerPixel(x, y, render_light, render_normal);
 
 						// Crosshair
 						if (std::abs(m_FinalImage->GetWidth() / 2.0f - x) < 3 &&
 							std::abs(m_FinalImage->GetHeight() / 2.0f - y) < 3)
 							color = glm::vec4(1.0, 0.0, 0.0, 1.0);
-						
+
 						color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
-						m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::ConvertToRGBA(color);
+						m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::Vec4ToRGBA(color);
 					}
 				}
 
@@ -256,10 +208,114 @@ void Renderer::Render(const Scene& scene, const Camera& camera, bool& render_lig
 		thread.join();
 	}
 
+	// Draw Octrees
+	bool is_draw_gizmo = false;
+
+	float octree_time = 0;
+	if (is_draw_gizmo)
+	{
+		Walnut::Timer t;
+
+		for (Octree& octree : m_Octrees)
+			DrawOctree(octree, 1);
+
+		octree_time = t.ElapsedMillis();
+	}
+
 	std::cout << "Render (" << m_FinalImage->GetWidth() << "x" << m_FinalImage->GetHeight() << ") in "
-		<< totMs << "ms (" << (totMs / (num_threads * num_threads)) << " ms each)" << std::endl;
+		<< totMs << "ms (" << (totMs / (num_threads * num_threads)) << " ms each) Gizmo: " << octree_time << std::endl;
 
 	m_FinalImage->SetData(m_ImageData);
+}
+
+void Renderer::DrawOctree(Octree& octree, uint8_t depth, uint32_t index)
+{
+	DrawQuad(octree.m_Nodes[index].bottom_corner.add(octree.m_Position), octree.m_Nodes[index].top_corner.add(octree.m_Position), 0xffff00ff);
+
+	if (depth > 0 && octree.m_Nodes[index].first_child != -1)
+		for (uint8_t i = 0; i < 8; i++)
+			DrawOctree(octree, depth - 1, octree.m_Nodes[index].first_child + i);
+}
+
+void Renderer::DrawQuad(glm::vec3& p0, glm::vec3& p1, uint32_t color)
+{
+	DrawLine(glm::vec3{ p0.x, p0.y, p0.z }, glm::vec3{ p1.x + 1, p0.y, p0.z }, color);
+	DrawLine(glm::vec3{ p0.x, p0.y, p0.z }, glm::vec3{ p0.x, p1.y + 1, p0.z }, color);
+	DrawLine(glm::vec3{ p0.x, p0.y, p0.z }, glm::vec3{ p0.x, p0.y, p1.z + 1 }, color);
+
+	DrawLine(glm::vec3{ p0.x, p1.y + 1, p0.z }, glm::vec3{ p1.x + 1, p1.y + 1, p0.z }, color);
+	DrawLine(glm::vec3{ p0.x, p1.y + 1, p0.z }, glm::vec3{ p0.x, p1.y + 1, p1.z + 1 }, color);
+
+	DrawLine(glm::vec3{ p1.x + 1, p0.y, p0.z }, glm::vec3{ p1.x + 1, p1.y + 1, p0.z }, color);
+
+	DrawLine(glm::vec3{ p1.x + 1, p1.y + 1, p1.z + 1 }, glm::vec3{ p0.x, p1.y + 1, p1.z + 1 }, color);
+	DrawLine(glm::vec3{ p1.x + 1, p1.y + 1, p1.z + 1 }, glm::vec3{ p1.x + 1, p0.y, p1.z + 1 }, color);
+	DrawLine(glm::vec3{ p1.x + 1, p1.y + 1, p1.z + 1 }, glm::vec3{ p1.x + 1, p1.y + 1, p0.z }, color);
+
+	DrawLine(glm::vec3{ p1.x + 1, p0.y, p1.z + 1 }, glm::vec3{ p0.x, p0.y, p1.z + 1 }, color);
+	DrawLine(glm::vec3{ p1.x + 1, p0.y, p1.z + 1 }, glm::vec3{ p1.x + 1, p0.y, p0.z }, color);
+
+	DrawLine(glm::vec3{ p0.x, p0.y, p1.z + 1 }, glm::vec3{ p0.x, p1.y + 1, p1.z + 1 }, color);
+}
+
+void Renderer::DrawLine(glm::vec3& point0, glm::vec3& point1, uint32_t color)
+{
+	glm::ivec2 p0, p1;
+	{
+		glm::vec4 clipSpacePos = m_ActiveCamera->GetProjection() * (m_ActiveCamera->GetView() * glm::vec4(point0, 1.0));
+		clipSpacePos /= clipSpacePos.w;
+
+		p0 =
+		{
+			((clipSpacePos.x + 1.0) / 2.0) * m_FinalImage->GetWidth(),
+			((clipSpacePos.y + 1.0) / 2.0) * m_FinalImage->GetHeight()
+		};
+
+		clipSpacePos = m_ActiveCamera->GetProjection() * (m_ActiveCamera->GetView() * glm::vec4(point1, 1.0));
+		clipSpacePos /= clipSpacePos.w;
+
+		p1 =
+		{
+			((clipSpacePos.x + 1.0) / 2.0) * m_FinalImage->GetWidth(),
+			((clipSpacePos.y + 1.0) / 2.0) * m_FinalImage->GetHeight()
+		};
+	}
+
+	glm::ivec2 d = glm::abs(p1 - p0);
+	d.y *= -1;
+
+	glm::ivec2 s = { (p0.x < p1.x ? 1 : -1), (p0.y < p1.y ? 1 : -1) };
+	int error = d.x + d.y, e2 = 0;
+
+	while (true)
+	{
+		DrawPoint(p0, color);
+		if (p0.x == p1.x && p0.y == p1.y)
+			break;
+
+		e2 = 2.0 * error;
+		if (e2 > d.y)
+		{
+			error += d.y;
+			p0.x += s.x;
+		}
+		if (e2 < d.x)
+		{
+			error += d.x;
+			p0.y += s.y;
+		}
+	}
+}
+
+void Renderer::DrawPoint(glm::ivec2& p, uint32_t color, uint8_t thickness)
+{
+	if (p.x - thickness < 0 || p.x + thickness >= m_FinalImage->GetWidth() ||
+		p.y - thickness < 0 || p.y + thickness >= m_FinalImage->GetHeight())
+		return;
+
+	for (int y = p.y - thickness; y < p.y + thickness; y++)
+		for (int x = p.x - thickness; x < p.x + thickness; x++)
+			m_ImageData[x + y * m_FinalImage->GetWidth()] = color;
 }
 
 glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& render_normal)
@@ -274,11 +330,11 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& r
 
 	float multiplier = 1.0f;
 
-	bool is_crosshair = false;
+	// DEBUG: Is on crosshair
 	if (std::abs(m_FinalImage->GetWidth() / 2.0f - x) < 1 &&
 		std::abs(m_FinalImage->GetHeight() / 2.0f - y) < 1)
 	{
-		is_crosshair = true;
+		int a = 0;
 	}
 
 	int bounces = 1;
@@ -309,9 +365,6 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& r
 		else
 			color = glm::vec3(1, 0, 1) * lightIntensity;
 
-		// if (is_crosshair)
-		// 	std::cout << "Normal Crosshair: " << glm::to_string(paylod.WorldNormal) << std::endl;
-
 		if (i == 1)
 			break;
 
@@ -324,20 +377,17 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& r
 	return glm::vec4(color, 1.0f);
 }
 
-bool Renderer::VoxelTraceRay(const Ray& ray, HitPaylod& paylod)
+bool Renderer::VoxelTraceRay(Ray& ray, HitPaylod& paylod)
 {
-	/*
-	if (Octree::ray_intersect_box(u_shortV3{5, 0, 14}, u_shortV3{6, 1, 15}, ray) != -1)
-	{
-		paylod.WorldPosition = glm::vec3(5, 0, 14);
-		paylod.OctreeNode = nullptr;
-		paylod.WorldNormal = glm::vec3();
-		return true;
-	}
-	*/
-
 	// Octree ray trace
-	auto [node, pos, norm] = m_Octree.ray_travel(ray);
+	int octree_index = 0;
+	if (Octree::ray_intersect_box(
+		m_Octrees[1].m_Nodes[0].bottom_corner.add(m_Octrees[1].m_Position),
+		m_Octrees[1].m_Nodes[0].top_corner.add(m_Octrees[1].m_Position), ray) != -1)
+		octree_index = 1;
+
+	ray.Origin -= m_Octrees[octree_index].m_Position;
+	auto [node, pos, norm] = m_Octrees[octree_index].ray_travel(ray);
 	if (node != nullptr)
 	{
 		paylod.WorldPosition = pos;
@@ -412,7 +462,6 @@ bool Renderer::ClosestHit(const Ray& ray, float hitDistance, int objectIndex, Hi
 
 bool Renderer::Miss(const Ray& ray, HitPaylod& paylod)
 {
-	paylod.OctreeNode = nullptr;
 	//paylod.HitDistance = -1.0f;
 	return false;
 }

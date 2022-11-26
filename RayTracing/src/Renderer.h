@@ -6,7 +6,7 @@
 #include "Ray.h"
 #include "Scene.h"
 
-#include "octree/Octree.h"
+#include "data_structs/Octree.h"
 
 #include <memory>
 #include <glm/glm.hpp>
@@ -33,9 +33,17 @@ private:
 		int ObjectIndex;
 	};
 
+	void DrawOctree(Octree& octree, uint8_t depth = 3, uint32_t index = 0);
+
+	void DrawQuad(glm::vec3& p0, glm::vec3& p1, uint32_t color);
+
+	void DrawLine(glm::vec3& point0, glm::vec3& point1, uint32_t color);
+
+	void DrawPoint(glm::ivec2& p, uint32_t color = 0xff0000ff, uint8_t thickness = 1);
+
 	glm::vec4 PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& render_normal); // RayGen
 
-	bool VoxelTraceRay(const Ray& ray, HitPaylod& paylod);
+	bool VoxelTraceRay(Ray& ray, HitPaylod& paylod);
 
 	bool TraceRay(const Ray& ray, HitPaylod& paylod);
 	bool ClosestHit(const Ray& ray, float hitDistance, int objectIndex, HitPaylod& paylod);
@@ -49,5 +57,6 @@ private:
 
 	uint32_t* m_ImageData = nullptr;
 
-	Octree m_Octree;
+public:
+	std::vector<Octree> m_Octrees;
 };

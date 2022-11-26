@@ -24,7 +24,17 @@ struct u_shortV3
 		return u_shortV3(x + v.x, y + v.y, z + v.z);
 	}
 
+	glm::vec3 add(glm::vec3& v)
+	{
+		return glm::vec3(x + v.x, y + v.y, z + v.z);
+	}
+
 	glm::vec3 sub(const glm::vec3& v)
+	{
+		return glm::vec3(x - v.x, y - v.y, z - v.z);
+	}
+
+	glm::vec3 sub(u_shortV3& v)
 	{
 		return glm::vec3(x - v.x, y - v.y, z - v.z);
 	}
@@ -32,6 +42,16 @@ struct u_shortV3
 	glm::vec3 mul(const glm::vec3& v)
 	{
 		return glm::vec3(x * v.x, y * v.y, z * v.z);
+	}
+
+	uint16_t max()
+	{
+		if (x > y)
+			if (x > z) return x;
+			else       return z;
+		else
+			if (y > z) return y;
+			else       return z;
 	}
 
 	bool greater_equals(u_shortV3& v)
@@ -52,6 +72,11 @@ struct u_shortV3
 	bool equal(uint16_t& x, uint16_t& y, uint16_t& z)
 	{
 		return x == x && y == y && z == z;
+	}
+
+	bool equal(glm::vec3& v)
+	{
+		return x == v.x && y == v.y && z == v.z;
 	}
 
 	bool is_zero()
@@ -137,6 +162,11 @@ struct OctreeNode
 		}
 	}
 
+	uint32_t data()
+	{
+		return flags & 0x3FFFFFFF;
+	}
+
 	bool is_full()
 	{
 		return (flags & 0x80000000) == 0x80000000; // 0b10
@@ -184,13 +214,18 @@ public:
 
 	void collapse_nodes();
 
+	void build_lods();
+
+	void calculate_max_depth();
+
 	uint16_t find_node_data(uint16_t x, uint16_t y, uint16_t z);
 
-	OctreeNode* find_node(uint16_t x, uint16_t y, uint16_t z);
+	bool find_node(uint16_t x, uint16_t y, uint16_t z, OctreeNode*& result, short& max_depth);
 
-	std::tuple<OctreeNode*, glm::vec3, glm::vec3> ray_travel(const Ray& ray);
+	std::tuple<OctreeNode*, glm::vec3, glm::vec3> ray_travel(Ray& ray);
 
-	static double ray_intersect_box(u_shortV3& min, u_shortV3& max, const Ray& ray);
+	static float ray_intersect_box(u_shortV3& min, u_shortV3& max, Ray& ray);
+	static float ray_intersect_box(glm::vec3& min, glm::vec3& max, Ray& ray);
 
 private:
 	void subdivide_node(OctreeNode*& mod_node, uint32_t& first_child);
@@ -203,14 +238,20 @@ private:
 
 	void remove_nodes(std::vector<uint32_t>& sub_nodes);
 
+	uint32_t calculate_node_lod(OctreeNode* node);
+
+	uint8_t find_max_depth(OctreeNode* node);
+
 	uint16_t find_node_data(uint16_t x, uint16_t y, uint16_t z, OctreeNode* node);
 
-	OctreeNode* find_node(uint16_t x, uint16_t y, uint16_t z, OctreeNode* node);
+	bool find_node(uint16_t x, uint16_t y, uint16_t z, OctreeNode* node, OctreeNode*& result, short& max_depth);
 
-	std::tuple<OctreeNode*, glm::vec3, glm::vec3> proc_ray_travel(const Ray& ray, OctreeNode* node);
+	std::tuple<OctreeNode*, glm::vec3, glm::vec3> proc_ray_travel(Ray& ray, OctreeNode* node);
 
 	bool point_in_box(u_shortV3& min, u_shortV3& max, glm::vec3& p);
 
 public:
-	std::vector<OctreeNode> nodes;
+	glm::vec3 m_Position;
+	uint8_t m_MaxDepth;
+	std::vector<OctreeNode> m_Nodes;
 };

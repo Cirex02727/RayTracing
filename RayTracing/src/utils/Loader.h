@@ -1,5 +1,5 @@
 #pragma once
-#include "../octree/Octree.h"
+#include "../data_structs/Octree.h"
 
 #include <fstream>
 #include "../Camera.h"

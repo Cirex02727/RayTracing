@@ -81,11 +81,11 @@ void Loader::dump_oct(const char* file_name, Octree& octree)
 	std::fstream file(file_name, std::ios::binary | std::ios::out);
 
 	// Write Nodes Size
-	int size = octree.nodes.size();
+	int size = octree.m_Nodes.size();
 	file.write((char*) &size, sizeof(int));
 
 	// Write Nodes
-	for (OctreeNode& node : octree.nodes)
+	for (OctreeNode& node : octree.m_Nodes)
 	{
 		file.write((char*) &node.first_child, sizeof(uint32_t));
 
