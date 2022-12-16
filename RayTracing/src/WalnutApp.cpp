@@ -103,7 +103,7 @@ public:
 			ImGui::PushID(i);
 
 			Octree& octree = m_Renderer.m_Octrees[i];
-			float d = glm::distance(octree.m_Nodes[0].top_corner.add(glm::vec3(1)) / 2.0f, m_Camera.GetPosition() - octree.m_Position);
+			float d = glm::distance(octree.m_Nodes[0].top_corner + glm::vec3(1) / 2.0f, m_Camera.GetPosition() - octree.m_Position);
 			ImGui::Text("Octree %i: %.2f - Max Depth: %i", i, d, Utils::GetLOD(d, octree.m_Nodes[0].top_corner.max(), octree.m_MaxDepth));
 
 			ImGui::Separator();

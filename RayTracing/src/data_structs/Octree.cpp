@@ -1,16 +1,21 @@
 #include "Octree.h"
 
-#include <Walnut/Timer.h>
-#include <unordered_map>
-#include <map>
+#include "Walnut/Timer.h"
+
 #include "../utils/Utils.h"
 
-Octree::Octree()
-	: m_Position() {}
+#include "../Core.h"
 
-void Octree::init(uint16_t max_size)
+#include <unordered_map>
+#include <map>
+
+Octree::Octree()
+	: m_Position(0), m_MaxDepth(0) {}
+
+void Octree::init(uint16_t size_x, uint16_t size_y, uint16_t size_z)
 {
-	m_Nodes.emplace_back(1, u_shortV3{ 0 }, u_shortV3{ (uint16_t)(max_size - 1) });
+	m_Nodes.emplace_back(1, u_shortV3{ 0 },
+		u_shortV3{ (uint16_t)(size_x - 1), (uint16_t)(size_y - 1), (uint16_t)(size_z - 1) });
 
 	OctreeNode* node = &m_Nodes[0];
 	uint32_t firstChild = -1;
@@ -30,7 +35,6 @@ void Octree::insert_node(uint16_t x, uint16_t y, uint16_t z, uint32_t data)
 	uint16_t mid_x, mid_y, mid_z;
 	uint8_t pos;
 
-	// TODO: Collapse m_Nodes
 	std::deque<uint32_t> try_collapse;
 
 	while (!node->bounds_is_zero())
@@ -44,36 +48,30 @@ void Octree::insert_node(uint16_t x, uint16_t y, uint16_t z, uint32_t data)
 		{
 			if (y <= mid_y)
 			{
-				if (z <= mid_z)
-					pos = 4;
-				else
-					pos = 5;
+				if (z <= mid_z) pos = 4;
+				else            pos = 5;
 			}
 			else
 			{
-				if (z <= mid_z)
-					pos = 0;
-				else
-					pos = 1;
+				if (z <= mid_z) pos = 0;
+				else            pos = 1;
 			}
 		}
 		else
 		{
 			if (y <= mid_y)
 			{
-				if (z <= mid_z)
-					pos = 6;
-				else
-					pos = 7;
+				if (z <= mid_z) pos = 6;
+				else            pos = 7;
 			}
 			else
 			{
-				if (z <= mid_z)
-					pos = 2;
-				else
-					pos = 3;
+				if (z <= mid_z) pos = 2;
+				else            pos = 3;
 			}
 		}
+
+		Utils::OctreeIdxRemap(pos, node);
 
 		prev_index = curr_index;
 		curr_index = node->first_child + pos;
@@ -139,7 +137,7 @@ void Octree::insert_range_node(u_shortV3& min_bound, u_shortV3& max_bound, uint3
 		mid_y = (uint16_t) ((node->bottom_corner.y + node->top_corner.y) / 2.0f);
 		mid_z = (uint16_t) ((node->bottom_corner.z + node->top_corner.z) / 2.0f);
 
-		if (min_bound.less_equals(node->bottom_corner) && max_bound.greater_equals(node->top_corner))
+		if (min_bound <= node->bottom_corner && max_bound >= node->top_corner)
 		{
 			node = &m_Nodes[index];
 			node->flags = 0xC0000000 | data; // has full data 0b11
@@ -192,8 +190,10 @@ void Octree::insert_range_node(u_shortV3& min_bound, u_shortV3& max_bound, uint3
 		}
 
 		index = node->first_child;
-		for (uint8_t n : to_add)
+		for (uint8_t& n : to_add)
 		{
+			Utils::OctreeIdxRemap(n, node);
+
 			if (index == -1 ||
 				index + n >= m_Nodes.size())
 					subdivide_node(node, index);
@@ -207,7 +207,7 @@ void Octree::insert_range_node(u_shortV3& min_bound, u_shortV3& max_bound, uint3
 
 void Octree::collapse_nodes()
 {
-	std::cout << "Check collapse paths" << std::endl;
+	FULL_TRACE("Check collapse paths");
 
 	std::vector<std::pair<uint32_t, std::deque<uint32_t>>> collapse_paths = check_collapse_path(0);
 
@@ -219,7 +219,7 @@ void Octree::collapse_nodes()
 
 	while (collapse_paths.size())
 	{
-		std::cout << "Process collapse depth: " << collapse_paths[0].second.size() << " paths: " << collapse_paths.size() << std::endl;
+		FULL_TRACE("Process collapse depth: " << collapse_paths[0].second.size() << " paths: " << collapse_paths.size());
 
 		// REFACTOR // CHANGE (Remove m_Nodes in the for loop) {
 		std::vector<std::pair<uint32_t, uint32_t>> to_remove;
@@ -252,8 +252,10 @@ void Octree::collapse_nodes()
 
 			// Check node can collapse
 			uint32_t sample_data = m_Nodes[first_child].data();
+			uint8_t child_count = m_Nodes[node_info.second[0]].child_count();
+
 			bool can_collapse = true;
-			for (uint8_t j = 1; j < 8; j++)
+			for (uint8_t j = 1; j < child_count; j++)
 			{
 				if ((m_Nodes[first_child + j].data()) != sample_data)
 				{
@@ -269,7 +271,7 @@ void Octree::collapse_nodes()
 			}
 
 			// Remove all childs
-			for (uint8_t j = 0; j < 8; j++)
+			for (uint8_t j = 0; j < child_count; j++)
 				to_remove.push_back({ first_child + j, node_info.first });
 		}
 		// REFACTOR // CHANGE }
@@ -290,7 +292,7 @@ void Octree::collapse_nodes()
 				return a.first > b.first;
 			});
 
-		std::cout << "Deleting " << to_remove.size() << " m_Nodes" << std::endl;
+		FULL_TRACE("Deleting " << to_remove.size() << " m_Nodes");
 
 		// Remove all m_Nodes
 		uint32_t start_idx = to_remove[0].first, end_idx = to_remove[0].first;
@@ -310,7 +312,7 @@ void Octree::collapse_nodes()
 
 
 		// Reset all childs pointer
-		std::cout << "Shifting all pointer" << std::endl;
+		FULL_TRACE("Shifting all pointer");
 
 		for (uint32_t i = 1; i < m_Nodes.size(); i++)
 		{
@@ -395,7 +397,7 @@ void Octree::collapse_nodes()
 			sub_node->first_child -= amount;
 		}
 
-		std::cout << "Shifting all paths" << std::endl;
+		FULL_TRACE("Shifting all paths");
 
 		// Decrease valid steps
 		for (uint32_t i = 0; i < collapse_paths.size(); i++)
@@ -466,7 +468,7 @@ void Octree::collapse_nodes()
 
 		to_remove.clear();
 
-		std::cout << "Check empty paths" << std::endl;
+		FULL_TRACE("Check empty paths");
 
 		// Remove all empty
 		for (int i = collapse_paths.size() - 1; i >= 0; i--)
@@ -489,9 +491,10 @@ void Octree::subdivide_node(OctreeNode*& node, uint32_t& first_child)
 {
 	node->first_child = first_child = (uint32_t) (m_Nodes.size());
 	u_shortV3 bot = node->bottom_corner, top = node->top_corner;
-
-	for (uint8_t i = 0; i < 8; i++)
-		m_Nodes.emplace_back(bot, top, i);
+	
+	uint8_t count = node->child_count();
+	for (uint8_t i = 0; i < count; i++)
+		m_Nodes.emplace_back(bot, top, i, count);
 }
 
 std::vector<std::pair<uint32_t, std::deque<uint32_t>>> Octree::check_collapse_path(uint32_t node_idx)
@@ -504,7 +507,7 @@ std::vector<std::pair<uint32_t, std::deque<uint32_t>>> Octree::check_collapse_pa
 
 	uint32_t sample_data = m_Nodes[node->first_child].data();
 	bool valid_end_node = true;
-	for (uint8_t i = 0; i < 8; i++)
+	for (uint8_t i = 0; i < node->child_count(); i++)
 	{
 		uint32_t idx = node->first_child + i;
 		OctreeNode* sub_node = &m_Nodes[idx];
@@ -600,7 +603,7 @@ std::tuple<bool, uint32_t, std::vector<uint32_t>> Octree::check_recursively_equa
 	std::vector<uint32_t> checked_m_Nodes;
 
 	uint32_t sample_data = m_Nodes[node->first_child].data();
-	for (uint8_t i = 0; i < 8; i++)
+	for (uint8_t i = 0; i < node->child_count(); i++)
 	{
 		OctreeNode* sub_node = &m_Nodes[node->first_child + i];
 		if (!sub_node->is_full() ||
@@ -640,7 +643,7 @@ uint32_t Octree::calculate_node_lod(OctreeNode* node)
 		return node->data();
 
 	std::map<uint32_t, uint8_t> data_count;
-	for (uint8_t i = 0; i < 8; i++)
+	for (uint8_t i = 0; i < node->child_count(); i++)
 	{
 		uint32_t data = calculate_node_lod(&m_Nodes[node->first_child + i]);
 		data_count[data]++;
@@ -660,7 +663,7 @@ uint8_t Octree::find_max_depth(OctreeNode* node)
 		return 1;
 
 	uint8_t max_depth = 0;
-	for (uint8_t i = 0; i < 8; i++)
+	for (uint8_t i = 0; i < node->child_count(); i++)
 	{
 		uint8_t depth = find_max_depth(&m_Nodes[node->first_child + i]);
 		max_depth = std::max(max_depth, ++depth);
@@ -713,6 +716,8 @@ uint16_t Octree::find_node_data(uint16_t x, uint16_t y, uint16_t z, OctreeNode* 
 				pos = 3;
 		}
 	}
+
+	Utils::OctreeIdxRemap(pos, node);
 
 	if (node->first_child == -1 ||
 		node->first_child + pos >= m_Nodes.size())
@@ -788,6 +793,8 @@ bool Octree::find_node(uint16_t x, uint16_t y, uint16_t z, OctreeNode* node, Oct
 		}
 	}
 
+	Utils::OctreeIdxRemap(pos, node);
+
 	/*
 	if (node->first_child + pos >= m_Nodes.size())
 	{
@@ -800,19 +807,24 @@ bool Octree::find_node(uint16_t x, uint16_t y, uint16_t z, OctreeNode* node, Oct
 }
 
 // Math3D OCtree https://www.math3d.org/QtfRmk23Y
-std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(Ray& ray, OctreeNode* node)
+bool Octree::proc_ray_travel(const Ray& ray, OctreeNode* node, RayHit* hit)
 {
 	double d = ray_intersect_box(node->bottom_corner, node->top_corner, ray);
 	glm::vec3 ray_pos = d < 0 ? ray.Origin : ray.Origin + ray.Direction * glm::vec3(d);
 	glm::vec3 pos = glm::floor(ray_pos);
 	if (d < 0 && !point_in_box(node->bottom_corner, node->top_corner, pos))
-		return { nullptr, glm::vec3(), glm::vec3() };
+	{
+		hit->Position = {};
+		hit->Node = nullptr;
+		hit->Normal = {};
+		return false;
+	}
 
 	glm::vec3 step = glm::sign(ray.Direction);
 	glm::vec3 tDelta = glm::vec3{
-		ray.Direction.x == 0 ? FLT_MIN : step.x / ray.Direction.x,
-		ray.Direction.y == 0 ? FLT_MIN : step.y / ray.Direction.y,
-		ray.Direction.z == 0 ? FLT_MIN : step.z / ray.Direction.z
+		ray.Direction.x == 0 ? FLT_MIN : step.x * ray.InvDirection.x,
+		ray.Direction.y == 0 ? FLT_MIN : step.y * ray.InvDirection.y,
+		ray.Direction.z == 0 ? FLT_MIN : step.z * ray.InvDirection.z
 	};
 
 	float tMaxX, tMaxY, tMaxZ;
@@ -830,31 +842,30 @@ std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(Ray& ray, 
 	OctreeNode* subNode = nullptr;
 
 	// LOD
-	d = glm::distance(node->top_corner.add(glm::vec3(1)) / 2.0f, ray.Origin);
-	short max_depth;
+	d = glm::distance(node->top_corner + glm::vec3(0.5), ray.Origin);
+	short max_depth = Utils::GetLOD(d, m_Nodes[0].top_corner.max(), m_MaxDepth);
 	// LOD
 
 	for (int i = 0; i < maxTrace; i++)
 	{
-		max_depth = Utils::GetLOD(d, m_Nodes[0].top_corner.max(), m_MaxDepth);
-
 		if (subNode == nullptr || subNode->has_data() || !point_in_box(subNode->bottom_corner, subNode->top_corner, pos))
 		{
 			if (point_in_box(node->bottom_corner, node->top_corner, pos))
 			{
 				isInBox = true;
-				if (find_node((uint16_t)pos.x, (uint16_t)pos.y, (uint16_t)pos.z, subNode, max_depth))
+				short depth = max_depth;
+				if (find_node((uint16_t)pos.x, (uint16_t)pos.y, (uint16_t)pos.z, subNode, depth))
 				{
-					if (max_depth == -2)
+					if (depth == -2)
 					{
 						ray_pos = ray.Origin + ray.Direction * ray_intersect_box(subNode->bottom_corner, subNode->top_corner, ray);
 
-						if      (std::abs(ray_pos.x - subNode->bottom_corner.x)  < 0.0001f) norm = glm::vec3(-1,  0,  0);
-						else if (std::abs(ray_pos.y - subNode->bottom_corner.y)  < 0.0001f) norm = glm::vec3( 0, -1,  0);
-						else if (std::abs(ray_pos.z - subNode->bottom_corner.z)  < 0.0001f) norm = glm::vec3( 0,  0, -1);
-						else if (std::abs(ray_pos.x - subNode->top_corner.x - 1) < 0.0001f) norm = glm::vec3( 1,  0,  0);
-						else if (std::abs(ray_pos.y - subNode->top_corner.y - 1) < 0.0001f) norm = glm::vec3( 0,  1,  0);
-						else if (std::abs(ray_pos.z - subNode->top_corner.z - 1) < 0.0001f) norm = glm::vec3( 0,  0,  1);
+						if (std::abs(ray_pos.x - subNode->bottom_corner.x) < 0.0001f) norm = glm::vec3(-1, 0, 0);
+						else if (std::abs(ray_pos.y - subNode->bottom_corner.y) < 0.0001f) norm = glm::vec3(0, -1, 0);
+						else if (std::abs(ray_pos.z - subNode->bottom_corner.z) < 0.0001f) norm = glm::vec3(0, 0, -1);
+						else if (std::abs(ray_pos.x - subNode->top_corner.x - 1) < 0.0001f) norm = glm::vec3(1, 0, 0);
+						else if (std::abs(ray_pos.y - subNode->top_corner.y - 1) < 0.0001f) norm = glm::vec3(0, 1, 0);
+						else if (std::abs(ray_pos.z - subNode->top_corner.z - 1) < 0.0001f) norm = glm::vec3(0, 0, 1);
 						else
 						{
 							glm::vec3 round_pos = glm::round(ray_pos);
@@ -890,7 +901,10 @@ std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(Ray& ray, 
 								norm = glm::vec3(0, 0, round_pos.z == (node->top_corner.z + 1) ? 1 : -1);
 					}
 
-					return { subNode, pos, norm };
+					hit->Position = pos;
+					hit->Node = subNode;
+					hit->Normal = norm;
+					return true;
 				}
 			}
 			else if (isInBox)
@@ -923,10 +937,13 @@ std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::proc_ray_travel(Ray& ray, 
 		}
 	}
 
-	return { nullptr, glm::vec3(), glm::vec3() };
+	hit->Position = {};
+	hit->Node = nullptr;
+	hit->Normal = {};
+	return false;
 }
 
-float Octree::ray_intersect_box(u_shortV3& min, u_shortV3& max, Ray& ray)
+float Octree::ray_intersect_box(const u_shortV3& min, const u_shortV3& max, const Ray& ray)
 {
 	float tx1 = ray.InvDirection.x * (-ray.Origin.x + min.x);
 	float tx2 = ray.InvDirection.x * (-ray.Origin.x + (max.x + 1));
@@ -949,7 +966,7 @@ float Octree::ray_intersect_box(u_shortV3& min, u_shortV3& max, Ray& ray)
 	return (tmax >= std::max(0.0f, tmin) && tmin < 10000.0f) ? tmin : -1;
 }
 
-float Octree::ray_intersect_box(glm::vec3& min, glm::vec3& max, Ray& ray)
+float Octree::ray_intersect_box(const glm::vec3& min, const glm::vec3& max, const Ray& ray)
 {
 	float tx1 = ray.InvDirection.x * (-ray.Origin.x + min.x);
 	float tx2 = ray.InvDirection.x * (-ray.Origin.x + (max.x + 1));
@@ -972,7 +989,7 @@ float Octree::ray_intersect_box(glm::vec3& min, glm::vec3& max, Ray& ray)
 	return (tmax >= std::max(0.0f, tmin) && tmin < 10000.0f) ? tmin : -1;
 }
 
-bool Octree::point_in_box(u_shortV3& min, u_shortV3& max, glm::vec3& p)
+bool Octree::point_in_box(const u_shortV3& min, const u_shortV3& max, const glm::vec3& p)
 {
 	return min.x <= p.x && p.x <= max.x && min.y <= p.y && p.y <= max.y && min.z <= p.z && p.z <= max.z;
 }
@@ -987,7 +1004,7 @@ bool Octree::find_node(uint16_t x, uint16_t y, uint16_t z, OctreeNode*& result, 
 	return find_node(x, y, z, &m_Nodes[0], result, max_depth);
 }
 
-std::tuple<OctreeNode*, glm::vec3, glm::vec3> Octree::ray_travel(Ray& ray)
+bool Octree::ray_travel(const Ray& ray, RayHit* hit)
 {
-	return proc_ray_travel(ray, &m_Nodes[0]);
+	return proc_ray_travel(ray, &m_Nodes[0], hit);
 }

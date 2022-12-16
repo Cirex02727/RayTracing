@@ -44,3 +44,74 @@ short Utils::GetLOD(float distance, uint16_t side_len, uint8_t max_depth)
 	// Proportion to Max Distance
 	return max_depth - std::min((uint8_t) std::round((distance - (side_len + 50)) * (max_depth - 1) / (450 - (side_len + 50))), (uint8_t) (max_depth - 1)) - 1;
 }
+
+void Utils::OctreeIdxRemap(uint8_t& pos, OctreeNode* node)
+{
+	uint8_t child_format = node->child_format();
+	if (child_format == 2)
+	{
+		if (node->bottom_corner.x == node->top_corner.x && pos > 3)
+		{
+			pos -= 2;
+		}
+		else if (node->bottom_corner.y == node->top_corner.y)
+		{
+			pos -= 4;
+		}
+		else if (node->bottom_corner.z == node->top_corner.z)
+		{
+			pos /= 2;
+		}
+	}
+	else if (child_format == 3)
+	{
+		if (node->bottom_corner.x != node->top_corner.x)
+		{
+			pos = (pos - 4) / 2;
+		}
+		else if (node->bottom_corner.y != node->top_corner.y)
+		{
+			pos /= 4;
+		}
+		else if (node->bottom_corner.z != node->top_corner.z)
+		{
+			pos -= 4;
+		}
+	}
+}
+
+void Utils::UnionAABBs(glm::vec3& source_min, glm::vec3& source_max, const glm::vec3& other_min, const glm::vec3& other_max)
+{
+	source_min.x = glm::min(source_min.x, other_min.x);
+	source_min.y = glm::min(source_min.y, other_min.y);
+	source_min.z = glm::min(source_min.z, other_min.z);
+	source_max.x = glm::max(source_max.x, other_max.x);
+	source_max.y = glm::max(source_max.y, other_max.y);
+	source_max.z = glm::max(source_max.z, other_max.z);
+}
+
+void Utils::UnionAABBs(glm::vec3& source_min, glm::vec3& source_max, const glm::vec3& other)
+{
+	source_min.x = glm::min(source_min.x, other.x);
+	source_min.y = glm::min(source_min.y, other.y);
+	source_min.z = glm::min(source_min.z, other.z);
+	source_max.x = glm::max(source_max.x, other.x);
+	source_max.y = glm::max(source_max.y, other.y);
+	source_max.z = glm::max(source_max.z, other.z);
+}
+
+uint8_t Utils::MaxExtension(const glm::vec3& min, const glm::vec3& max)
+{
+	if (max.x - min.x > max.y - min.y)
+		if (max.x - min.x > max.z - min.z) return 0;
+		else                               return 2;
+	else
+		if (max.y - min.y > max.z - min.z) return 1;
+		else                               return 2;
+}
+
+float Utils::SurfaceArea(const glm::vec3& min, const glm::vec3& max)
+{
+	glm::vec3 d = max - min;
+	return 2.f * (d.x * d.y + d.x * d.z + d.y * d.z);
+}

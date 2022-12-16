@@ -7,9 +7,9 @@
 class Loader
 {
 public:
-	static void load_vox(const char* file_name, Octree& octree);
+	static Octree* load_vox(const char* file_name, std::vector<Octree>& octrees);
 
-	static void load_oct(const char* file_name, Octree& octree);
+	static Octree* load_oct(const char* file_name, std::vector<Octree>& octrees);
 
 	static void load_scene(const char* file_name, Camera& camera, bool& render_light, bool& render_normal);
 
@@ -19,4 +19,7 @@ public:
 
 private:
 	static void load_chunk(std::fstream& file, Octree& octree);
+
+public:
+	static const uint32_t PALETTE[256];
 };

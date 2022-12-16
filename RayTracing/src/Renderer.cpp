@@ -11,27 +11,55 @@
 #include <thread>
 
 Renderer::Renderer()
+	: m_Octrees(), m_HLBVH(m_Octrees, 250)
 {
 	// Walnut::Random::Init();
 
-	m_Octrees = std::vector<Octree>(2);
-
 	// Generate Octree
 	{
-		Walnut::Timer t;
+		// Octree* octree = Loader::load_vox("./models/model_16_1.vox", m_Octrees);
 
-		// Loader::load_vox("./models/model_128.vox", m_Octree);
-		// m_Octrees[0].collapse_nodes();
-		// Loader::dump_oct("./models/model_128.oct", m_Octree);
+		{
+			Octree* octree = Loader::load_oct("./models/octrees/frame.oct", m_Octrees);
+			
+			octree->m_Position = glm::vec3{ 0, 0, 0 };
+		}
 
-		Loader::load_oct("./models/model_4.oct", m_Octrees[0]);
-		// m_Octrees[0].collapse_nodes();
-		m_Octrees[0].build_lods();
-		m_Octrees[0].calculate_max_depth();
+		{
+			Octree* octree = Loader::load_oct("./models/octrees/car.oct", m_Octrees);
 
+			octree->m_Position = glm::vec3{ 32, 0, 32 };
+		}
 
-		uint16_t octree_size = 64;
+		{
+			Octree* octree = Loader::load_oct("./models/octrees/model_16.oct", m_Octrees);
+			
+			octree->m_Position = glm::vec3{ 16, 0, -8 };
+		}
+
+		{
+			Octree* octree = Loader::load_oct("./models/octrees/model_32.oct", m_Octrees);
+
+			octree->m_Position = glm::vec3{ 48, 0, 16 };
+		}
+
+		{
+			Octree* octree = Loader::load_oct("./models/octrees/model_16_1.oct", m_Octrees);
+
+			octree->m_Position = glm::vec3{ -8, 0, 24 };
+		}
+
+		{
+			for (uint8_t i = 0; i < 20; i++)
+			{
+				Octree* octree = Loader::load_oct("./models/octrees/model_16.oct", m_Octrees);
+
+				octree->m_Position = glm::vec3{ Walnut::Random::UInt(64, 256), 0, Walnut::Random::UInt(64, 256) };
+			}
+		}
+
 		/*
+		uint16_t octree_size = 64;
 		m_Octrees[0].init(octree_size);
 		for(uint16_t z = 0; z < octree_size; z++)
 			for (uint16_t y = 0; y < octree_size; y++)
@@ -42,8 +70,6 @@ Renderer::Renderer()
 						m_Octrees[0].insert_node(x, y, z, ((x * 255 / octree_size) << 16) | ((y * 255 / octree_size) << 8) | (z * 255 / octree_size));
 				}
 		*/
-
-		std::cout << "Fill Octree0: " << t.ElapsedMillis() << " ms " << ((m_Octrees[0].m_Nodes.size() * sizeof(OctreeNode)) / 1024.0f / 1024) << "MB" << std::endl;
 
 		/*
 		octree_size = 64;
@@ -58,86 +84,67 @@ Renderer::Renderer()
 				}
 		*/
 
-		Loader::load_oct("./models/model_32.oct", m_Octrees[1]);
-		m_Octrees[1].build_lods();
-		m_Octrees[1].calculate_max_depth();
-
-		std::cout << "Fill Octree1: " << t.ElapsedMillis() << " ms " << ((m_Octrees[1].m_Nodes.size() * sizeof(OctreeNode)) / 1024.0f / 1024) << "MB" << std::endl;
-
-		m_Octrees[0].m_Position = glm::vec3{ 0, 0, 0 };
-		m_Octrees[1].m_Position = glm::vec3{ 16, 0, 16 };
-
-
-		t.Reset();
-
-		for (Octree& octree : m_Octrees)
-		{
-			octree.build_lods();
-		}
-
-		std::cout << "Build lods: " << m_Octrees.size() << " x " << t.ElapsedMillis() << " ms" << std::endl;
+		m_HLBVH.Build();
 	}
 
 	// Benchmark
-	bool benchmark = false;
-	if(benchmark)
+#if 0
+	Walnut::Timer t;
+
+	float totTime = 0;
+	uint32_t step = 200, count = 1'000'000;
+
+	for (uint32_t i = 0; i < step; i++)
 	{
-		Walnut::Timer t;
+		t.Reset();
 
-		float totTime = 0;
-		uint32_t step = 200, count = 1'000'000;
+		// Find Node
+		OctreeNode* n;
+		short max_depth = 0;
+		for (uint32_t i = 0; i < count; i++)
+			bool found = m_Octrees[0].find_node(0, 0, 0, n, max_depth);
 
-		for (uint32_t i = 0; i < step; i++)
-		{
-			t.Reset();
-
-			// Find Node
-			OctreeNode* n;
-			short max_depth = 0;
-			for (uint32_t i = 0; i < count; i++)
-				bool found = m_Octrees[0].find_node(0, 0, 0, n, max_depth);
-
-			totTime += t.ElapsedMillis();
-		}
-		std::cout << "Find Node x" << step << " | " << totTime << " ms | " << (totTime / step) << " ms each | " << (((totTime / step) / count) * 1'000'000) << " ns each | " << count << std::endl;
-
-
-		totTime = 0;
-
-		for (uint32_t i = 0; i < step; i++)
-		{
-			t.Reset();
-
-			// Find Node Data
-			for (uint32_t i = 0; i < count; i++)
-				uint16_t v = m_Octrees[0].find_node_data(0, 0, 0);
-
-			totTime += t.ElapsedMillis();
-		}
-		std::cout << "Find Node Data x" << step << " | " << totTime << " ms | " << (totTime / step) << " ms each | " << (((totTime / step) / count) * 1'000'000) << " ns each | " << count << std::endl;
-
-
-		totTime = 0;
-
-		for (uint32_t i = 0; i < step; i++)
-		{
-			t.Reset();
-
-			// Ray Travel
-			Ray ray{};
-			ray.Origin = { -1, 12, -1 };
-			ray.Direction = { 0, -0.589469, 0.8077909 };
-			ray.InvDirection = glm::vec3(1) / ray.Direction;
-			ray.MaxDistance = 100;
-
-			for (uint32_t i = 0; i < count; i++)
-				auto [node, pos, norm] = m_Octrees[0].ray_travel(ray);
-
-			totTime += t.ElapsedMillis();
-		}
-
-		std::cout << "Ray Travel x" << step << " | " << totTime << " ms | " << (totTime / step) << " ms each | " << (((totTime / step) / count) * 1'000'000) << " ns each | " << count << std::endl;
+		totTime += t.ElapsedMillis();
 	}
+	std::cout << "Find Node x" << step << " | " << totTime << " ms | " << (totTime / step) << " ms each | " << (((totTime / step) / count) * 1'000'000) << " ns each | " << count << std::endl;
+
+
+	totTime = 0;
+
+	for (uint32_t i = 0; i < step; i++)
+	{
+		t.Reset();
+
+		// Find Node Data
+		for (uint32_t i = 0; i < count; i++)
+			uint16_t v = m_Octrees[0].find_node_data(0, 0, 0);
+
+		totTime += t.ElapsedMillis();
+	}
+	std::cout << "Find Node Data x" << step << " | " << totTime << " ms | " << (totTime / step) << " ms each | " << (((totTime / step) / count) * 1'000'000) << " ns each | " << count << std::endl;
+
+
+	totTime = 0;
+
+	for (uint32_t i = 0; i < step; i++)
+	{
+		t.Reset();
+
+		// Ray Travel
+		Ray ray{};
+		ray.Origin = { -1, 12, -1 };
+		ray.Direction = { 0, -0.589469, 0.8077909 };
+		ray.InvDirection = glm::vec3(1) / ray.Direction;
+		ray.MaxDistance = 100;
+
+		for (uint32_t i = 0; i < count; i++)
+			auto [node, pos, norm] = m_Octrees[0].ray_travel(ray);
+
+		totTime += t.ElapsedMillis();
+	}
+
+	std::cout << "Ray Travel x" << step << " | " << totTime << " ms | " << (totTime / step) << " ms each | " << (((totTime / step) / count) * 1'000'000) << " ns each | " << count << std::endl;
+#endif
 }
 
 void Renderer::OnResize(uint32_t width, uint32_t height)
@@ -167,35 +174,37 @@ void Renderer::Render(const Scene& scene, const Camera& camera, bool& render_lig
 	std::vector<std::thread> threads;
 	unsigned char num_threads = 6; // Default 6
 
-	uint32_t stepX = m_FinalImage->GetWidth() / num_threads;
-	uint32_t stepY = m_FinalImage->GetHeight() / num_threads;
+	uint32_t imageW = m_FinalImage->GetWidth(), imageH = m_FinalImage->GetHeight();
+
+	uint32_t stepX = imageW / num_threads;
+	uint32_t stepY = imageH / num_threads;
 	
 	float totMs = 0;
 	for (unsigned char j = 0; j < num_threads; j++)
 	{
+		uint32_t startY = stepY * j, endY = j + 1 == num_threads ? imageH : stepY * (j + 1);
+
 		for (unsigned char i = 0; i < num_threads; i++)
 		{
-			threads.emplace_back([this, &stepX, i, &stepY, j, &num_threads, &totMs, &render_light, &render_normal]() {
+			threads.emplace_back([this, &stepX, i, startY, endY, &imageW, &imageH, &num_threads, &totMs, &render_light, &render_normal]() {
 				Walnut::Timer t;
 				
-				uint32_t startX = stepX * i, startY = stepY * j;
-				uint32_t endX = i == num_threads - 1 ? m_FinalImage->GetWidth() : stepX * (i + 1);
-				uint32_t endY = j == num_threads - 1 ? m_FinalImage->GetHeight() : stepY * (j + 1);
+				uint32_t startX = stepX * i;
+				uint32_t endX = i + 1 == num_threads ? imageW : stepX * (i + 1);
 
 				for (uint32_t y = startY; y < endY; y++)
 				{
 					for (uint32_t x = startX; x < endX; x++)
 					{
-						//else
 						glm::vec4 color = PerPixel(x, y, render_light, render_normal);
 
 						// Crosshair
-						if (std::abs(m_FinalImage->GetWidth() / 2.0f - x) < 3 &&
-							std::abs(m_FinalImage->GetHeight() / 2.0f - y) < 3)
+						if (std::abs(imageW / 2.0f - x) < 3 &&
+							std::abs(imageH / 2.0f - y) < 3)
 							color = glm::vec4(1.0, 0.0, 0.0, 1.0);
 
 						color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
-						m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::Vec4ToRGBA(color);
+						m_ImageData[x + y * imageW] = Utils::Vec4ToRGBA(color);
 					}
 				}
 
@@ -208,33 +217,56 @@ void Renderer::Render(const Scene& scene, const Camera& camera, bool& render_lig
 		thread.join();
 	}
 
-	// Draw Octrees
-	bool is_draw_gizmo = false;
-
-	float octree_time = 0;
-	if (is_draw_gizmo)
+	// Draw Gizmo Octrees
+	float gizmo_render = 0;
+#if 1
 	{
 		Walnut::Timer t;
 
 		for (Octree& octree : m_Octrees)
-			DrawOctree(octree, 1);
+			DrawOctree(octree, 0);
 
-		octree_time = t.ElapsedMillis();
+		gizmo_render += t.ElapsedMillis();
 	}
+#endif
 
-	std::cout << "Render (" << m_FinalImage->GetWidth() << "x" << m_FinalImage->GetHeight() << ") in "
-		<< totMs << "ms (" << (totMs / (num_threads * num_threads)) << " ms each) Gizmo: " << octree_time << std::endl;
+#if 1
+	{
+		Walnut::Timer t;
+
+		DrawHLBVH(m_HLBVH.GetNodeIterator(), -1);
+
+		gizmo_render += t.ElapsedMillis();
+	}
+#endif
+
+	std::cout << "Render (" << imageW << "x" << imageH << ") in "
+		<< totMs << "ms (" << (totMs / (num_threads * num_threads)) << " ms each) Gizmo: " << gizmo_render << std::endl;
 
 	m_FinalImage->SetData(m_ImageData);
 }
 
-void Renderer::DrawOctree(Octree& octree, uint8_t depth, uint32_t index)
+void Renderer::DrawOctree(Octree& octree, int depth, uint32_t index)
 {
-	DrawQuad(octree.m_Nodes[index].bottom_corner.add(octree.m_Position), octree.m_Nodes[index].top_corner.add(octree.m_Position), 0xffff00ff);
+	DrawQuad(octree.m_Nodes[index].bottom_corner + octree.m_Position,
+			 octree.m_Nodes[index].top_corner    + octree.m_Position,
+			Loader::PALETTE[((depth < 0 ? -depth : depth) * 321 + 876) % 256]);
 
-	if (depth > 0 && octree.m_Nodes[index].first_child != -1)
-		for (uint8_t i = 0; i < 8; i++)
+	if (depth != 0 && octree.m_Nodes[index].first_child != -1)
+		for (uint8_t i = 0; i < octree.m_Nodes[index].child_count(); i++)
 			DrawOctree(octree, depth - 1, octree.m_Nodes[index].first_child + i);
+}
+
+void Renderer::DrawHLBVH(LinearBVHNode* node, int depth, uint32_t index)
+{
+	DrawQuad(node[index].bound_min, node[index].bound_max,
+			 Loader::PALETTE[((depth < 0 ? -depth : depth) * 321 + 876) % 256]);
+
+	if (depth != 0 && node[index].nPrimitives == 0)
+	{
+		DrawHLBVH(node, depth - 1, node[index].firstChildOffset);
+		DrawHLBVH(node, depth - 1, node[index].secondChildOffset);
+	}
 }
 
 void Renderer::DrawQuad(glm::vec3& p0, glm::vec3& p1, uint32_t color)
@@ -280,6 +312,12 @@ void Renderer::DrawLine(glm::vec3& point0, glm::vec3& point1, uint32_t color)
 			((clipSpacePos.y + 1.0) / 2.0) * m_FinalImage->GetHeight()
 		};
 	}
+
+	if ((p0.x < 0 || p0.x >= m_FinalImage->GetWidth() ||
+		p0.y < 0 || p0.y >= m_FinalImage->GetHeight()) &&
+		(p1.x < 0 || p1.x >= m_FinalImage->GetWidth() ||
+			p1.y < 0 || p1.y >= m_FinalImage->GetHeight()))
+		return;
 
 	glm::ivec2 d = glm::abs(p1 - p0);
 	d.y *= -1;
@@ -380,23 +418,16 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, bool& render_light, bool& r
 bool Renderer::VoxelTraceRay(Ray& ray, HitPaylod& paylod)
 {
 	// Octree ray trace
-	int octree_index = 0;
-	if (Octree::ray_intersect_box(
-		m_Octrees[1].m_Nodes[0].bottom_corner.add(m_Octrees[1].m_Position),
-		m_Octrees[1].m_Nodes[0].top_corner.add(m_Octrees[1].m_Position), ray) != -1)
-		octree_index = 1;
-
-	ray.Origin -= m_Octrees[octree_index].m_Position;
-	auto [node, pos, norm] = m_Octrees[octree_index].ray_travel(ray);
-	if (node != nullptr)
+	RayHit hit;
+	if (m_HLBVH.Intersect(ray, &hit))
 	{
-		paylod.WorldPosition = pos;
-		paylod.OctreeNode = node;
-		paylod.WorldNormal = norm;
+		paylod.WorldPosition = hit.Position;
+		paylod.OctreeNode = hit.Node;
+		paylod.WorldNormal = hit.Normal;
 		return true;
 	}
-	else
-		return Miss(ray, paylod);
+
+	return Miss(ray, paylod);
 }
 
 bool Renderer::TraceRay(const Ray& ray, HitPaylod& paylod)

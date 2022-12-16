@@ -10,3 +10,12 @@ struct Ray
 
 	double MaxDistance;
 };
+
+struct OctreeNode;
+
+struct RayHit
+{
+	OctreeNode* Node;
+	glm::vec3 Position;
+	glm::vec3 Normal;
+};
